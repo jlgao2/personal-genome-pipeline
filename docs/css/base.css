@@ -1,0 +1,135 @@
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body { min-height: 100vh; }
+img, svg { display: block; max-width: 100%; }
+ul, ol { list-style: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+button:focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
+input { font-family: inherit; color: inherit; background: none; border: none; }
+input:focus { outline: none; }
+details summary { cursor: pointer; }
+details summary::-webkit-details-marker { display: none; }
+
+/* ── Custom Properties ── */
+:root {
+  /* Cool monolith palette */
+  --bg:        #06080c;          /* deep blue-black */
+  --bg-tint:   #06080c;
+  --bg-card:   #0c1018;          /* subtle elevation */
+  --bg-grid:   rgba(94, 226, 255, 0.025);
+
+  --fg:        #e8eef5;
+  --fg-dim:    rgba(232, 238, 245, 0.55);
+  --fg-mute:   rgba(232, 238, 245, 0.32);
+
+  /* Electric cyan — HAL-eye-but-cyan, biotech terminal */
+  --accent:    #5ee2ff;          /* primary */
+  --accent-soft: rgba(94, 226, 255, 0.12);
+  --accent-bright: #82ecff;
+  --accent-deep: #1ba8d1;
+
+  /* Tier indicators */
+  --tier-a:    #5ee2ff;          /* cyan — primary findings */
+  --tier-b:    #a4b8cc;          /* cool gray-blue */
+  --tier-c:    #7df0a8;          /* lab green — reassuring */
+
+  /* Warning / critical — HAL red */
+  --warn:      #ff3a4a;
+  --warn-soft: rgba(255, 58, 74, 0.1);
+
+  --border:    rgba(232, 238, 245, 0.10);
+  --border-strong: rgba(232, 238, 245, 0.20);
+  --border-accent: rgba(94, 226, 255, 0.25);
+
+  --font-display: 'Space Grotesk', 'Helvetica Neue', sans-serif;
+  --font-mono: 'Space Mono', 'JetBrains Mono', 'Courier New', monospace;
+  --font-body: 'Space Grotesk', 'Helvetica Neue', sans-serif;
+
+  --nav-h:     58px;
+  --pad-x:     clamp(1.25rem, 5vw, 4rem);
+  --max-w:     1320px;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--fg);
+  overflow-x: hidden;
+
+  /* Subtle grid backdrop — faint terminal feel */
+  background-image:
+    linear-gradient(var(--bg-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: -1px -1px;
+}
+
+/* ── Typography ── */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+a { color: inherit; text-decoration: none; transition: color 200ms ease; }
+a:hover { color: var(--accent); }
+::selection { background: var(--accent); color: var(--bg); }
+
+/* ── Scrollbar — lab-thin ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--accent-deep); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── Utilities ── */
+.u-upper { text-transform: uppercase; }
+.u-mono  { font-family: var(--font-mono); }
+.u-dim   { color: var(--fg-dim); }
+.u-accent { color: var(--accent); }
+.u-warn  { color: var(--warn); }
+.u-good  { color: var(--tier-c); }
+
+/* Crosshair / corner brackets — used for "framed" elements */
+.u-bracketed {
+  position: relative;
+}
+.u-bracketed::before,
+.u-bracketed::after {
+  content: '';
+  position: absolute;
+  width: 8px; height: 8px;
+  border: 1px solid var(--accent);
+}
+.u-bracketed::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.u-bracketed::after  { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+/* ── Status dots ── */
+.dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 0.5em;
+}
+.dot--cyan  { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.dot--green { background: var(--tier-c); box-shadow: 0 0 6px var(--tier-c); }
+.dot--gray  { background: var(--fg-dim); }
+.dot--red   { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Print ── */
+@media print {
+  body { background: white; color: black; background-image: none; }
+  .site-nav, .filter-bar, .nav-actions { display: none !important; }
+  .card, .finding-block { break-inside: avoid; }
+}

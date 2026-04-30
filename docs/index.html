@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="DEMO — Personal genome dashboard sample with synthetic data. Source code at github.com/jlgao2/personal-genome-pipeline" />
+  <title>Genome // Report — DEMO</title>
+
+  <style>
+    /* Demo banner — sticky strip at the very top */
+    .demo-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 250;
+      background: var(--warn);
+      color: var(--bg);
+      padding: 0.4rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(255, 58, 74, 0.3);
+    }
+    .demo-banner a {
+      color: var(--bg);
+      text-decoration: underline;
+      margin-left: 0.5rem;
+    }
+    .demo-banner a:hover { color: var(--bg-card); }
+    body { padding-top: 28px; } /* push everything down so banner doesn't cover */
+  </style>
+
+  <link href="https://api.fontshare.com/v2/css?f[]=space-grotesk@300,400,500,700&f[]=space-mono@400,700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+</head>
+<body>
+
+  <!-- Demo banner -->
+  <div class="demo-banner">
+    DEMO · SYNTHETIC DATA · SUBJECT DEMO-0001 ·
+    <a href="https://github.com/jlgao2/personal-genome-pipeline" target="_blank">→ Source code on GitHub</a>
+    <a href="howto.html">→ How to run on your own data</a>
+  </div>
+
+  <!-- Left rail (sidebar nav) -->
+  <aside class="rail">
+    <div class="rail-header">
+      GENOME<span class="accent">//</span>REPORT
+      <div class="rail-header-sub">SUBJECT 5405929</div>
+    </div>
+
+    <nav class="rail-section">
+      <span class="rail-section-label">Findings</span>
+      <ul class="nav-sections">
+        <li><button class="nav-btn" data-section="actionable" data-num="01">Actionable</button></li>
+        <li><button class="nav-btn" data-section="drugs"      data-num="02">Drugs (PGx)</button></li>
+        <li><button class="nav-btn" data-section="cardio"     data-num="03">Cardiology</button></li>
+        <li><button class="nav-btn" data-section="carrier"    data-num="04">Carrier</button></li>
+        <li><button class="nav-btn" data-section="nutrition"  data-num="05">Nutrition</button></li>
+        <li><button class="nav-btn" data-section="lifestyle"  data-num="06">Lifestyle</button></li>
+        <li><button class="nav-btn" data-section="prs"        data-num="07">PRS</button></li>
+      </ul>
+    </nav>
+
+    <nav class="rail-section">
+      <span class="rail-section-label">Context</span>
+      <ul class="nav-sections">
+        <li><button class="nav-btn" data-section="crossref"   data-num="08">Clinical X-ref</button></li>
+        <li><button class="nav-btn" data-section="reassuring" data-num="09">Reassuring</button></li>
+        <li><button class="nav-btn" data-section="limits"     data-num="10">Limits</button></li>
+      </ul>
+    </nav>
+
+    <div class="rail-footer">
+      <div class="rail-footer-status">PIPELINE READY</div>
+      <div>23andMe v5 → TOPMed → PharmCAT → PGS Catalog</div>
+    </div>
+  </aside>
+
+  <!-- Top bar (subject metadata + actions) -->
+  <nav class="site-nav">
+    <a class="nav-logo" href="#top">
+      <span class="nav-logo-dot" aria-hidden="true"></span>
+      DASHBOARD
+    </a>
+    <div class="nav-meta">
+      <span class="nav-meta-item">BUILD <strong>GRCh38</strong></span>
+      <span class="nav-meta-item">R² ≥ <strong>0.8</strong></span>
+      <span class="nav-meta-item">PHARMCAT <strong>3.2.0</strong></span>
+      <span class="nav-meta-item">CLINVAR <strong>2026-04</strong></span>
+    </div>
+    <div class="nav-actions">
+      <button class="nav-action" id="btn-expand">Expand all</button>
+      <button class="nav-action" id="btn-print">Print</button>
+    </div>
+  </nav>
+
+  <main>
+
+  <!-- Subject overview panel -->
+  <header class="hero" id="top">
+    <p class="hero-eyebrow">OVERVIEW // SUBJECT 5405929</p>
+    <h1 class="hero-title">GAO, JIA LIN <span class="accent">/</span> M / 31</h1>
+    <div class="hero-stats" id="hero-stats"></div>
+  </header>
+
+  <!-- Actionable -->
+  <section class="section" id="actionable" data-findings-section>
+    <p class="section-kicker">Top of report</p>
+    <h2 class="section-title">Actionable findings</h2>
+    <p class="section-lead">
+      The eight findings below have strong evidence, real-world implications, and would
+      change a doctor's prescribing or screening decisions. Click any card to jump to the full detail.
+    </p>
+    <div class="actions-grid" id="actions-grid"></div>
+  </section>
+
+  <!-- Drugs -->
+  <section class="section" id="drugs" data-findings-section>
+    <p class="section-kicker">Pharmacogenomics</p>
+    <h2 class="section-title">Drugs to flag</h2>
+    <p class="section-lead">
+      Findings derived using dbSNP forward-strand convention against CPIC Level A guidelines.
+      These do not change with future re-runs. Photograph for your phone's medical info.
+    </p>
+
+    <div class="filter-bar">
+      <span class="filter-bar-label">Filter</span>
+      <button class="filter-chip is-active" data-filter="all">All</button>
+      <button class="filter-chip" data-filter="tier" data-value="A">Tier A</button>
+      <button class="filter-chip" data-filter="tier" data-value="B">Tier B</button>
+      <button class="filter-chip" data-filter="tier" data-value="C">Tier C</button>
+      <input type="text" class="search-input" id="search-input" placeholder="Search rsID / gene / drug…" />
+    </div>
+
+    <div class="findings-list"></div>
+  </section>
+
+  <!-- Cardiology -->
+  <section class="section" id="cardio" data-findings-section>
+    <p class="section-kicker">Cardiovascular risk</p>
+    <h2 class="section-title">Cardiology</h2>
+    <p class="section-lead">
+      9p21 risk haplotype is the strongest single-locus CAD signal in your data. Combined with
+      a maternal-grandfather history of heart disease and a borderline-pro-inflammatory cytokine
+      profile, this section warrants the most attention.
+    </p>
+    <div class="findings-list"></div>
+  </section>
+
+  <!-- Carrier -->
+  <section class="section" id="carrier" data-findings-section>
+    <p class="section-kicker">Recessive disease carrier status</p>
+    <h2 class="section-title">Carrier</h2>
+    <p class="section-lead">
+      Findings here are asymptomatic in you. Relevance is for family planning — partner screening
+      ($300–400) gives a clean answer for ~280 recessive diseases including the BCKDHA finding below.
+    </p>
+    <div class="findings-list"></div>
+  </section>
+
+  <!-- Nutrition -->
+  <section class="section" id="nutrition" data-findings-section>
+    <p class="section-kicker">Nutrition &amp; metabolism</p>
+    <h2 class="section-title">Nutrition</h2>
+    <p class="section-lead">
+      Curated panel of nutrigenomic SNPs verified against dbSNP forward strand. The MTHFR and
+      vitamin D findings are immediately actionable; the others inform supplementation choices.
+    </p>
+    <div class="findings-list"></div>
+  </section>
+
+  <!-- Lifestyle -->
+  <section class="section" id="lifestyle" data-findings-section>
+    <p class="section-kicker">Behavior, exercise, sleep</p>
+    <h2 class="section-title">Lifestyle</h2>
+    <p class="section-lead">
+      Variants that don't determine disease but inform how you respond to alcohol, caffeine,
+      training type, salt, and sleep cues.
+    </p>
+    <div class="findings-list"></div>
+  </section>
+
+  <!-- PRS -->
+  <section class="section" id="prs">
+    <p class="section-kicker">Polygenic risk scores</p>
+    <h2 class="section-title">PRS</h2>
+    <p class="section-lead">
+      Weighted sums across 18.6 million SNPs from 10 PGS Catalog scoring files.
+      Direction is interpretable; precise percentiles require ancestry-matched reference
+      distributions (proper Dockerised pgsc_calc run, future work). Reading: green = low
+      direction, amber = elevated direction, gray = neutral or low coverage.
+    </p>
+    <div class="prs-grid" id="prs-grid"></div>
+  </section>
+
+  <!-- Cross-reference -->
+  <section class="section" id="crossref">
+    <p class="section-kicker">Genotype × medical record</p>
+    <h2 class="section-title">Clinical convergences</h2>
+    <p class="section-lead">
+      Where a genetic prediction matches a lab value or documented clinical event, confidence
+      in the finding is reinforced. Below are the strongest convergences from your record.
+    </p>
+    <div class="crossref-grid" id="crossref-grid"></div>
+
+    <h3 class="section-title" style="margin-top: 4rem; font-size: clamp(1.4rem, 3vw, 2rem);">
+      Lab values (recent encounters)
+    </h3>
+    <div style="overflow-x: auto;">
+      <table class="labs-table" id="labs-table">
+        <thead>
+          <tr>
+            <th>Lab</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Reference</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3 class="section-title" style="margin-top: 4rem; font-size: clamp(1.4rem, 3vw, 2rem);">
+      Next PCP visit agenda
+    </h3>
+    <p class="section-lead" style="margin-bottom: 1.5rem;">
+      Tap to check off as you discuss / complete each item. Saved locally in your browser.
+    </p>
+    <ul id="pcp-agenda" class="findings-list" style="display: flex; flex-direction: column; gap: 0;"></ul>
+    <style>
+      #pcp-agenda .check-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        user-select: none;
+        transition: opacity 200ms ease;
+      }
+      #pcp-agenda .check-item:hover { opacity: 0.85; }
+      #pcp-agenda .check-box {
+        width: 18px; height: 18px;
+        border: 1px solid var(--border);
+        flex-shrink: 0;
+        margin-top: 0.15rem;
+        position: relative;
+        transition: border-color 250ms ease, background 250ms ease;
+      }
+      #pcp-agenda .check-box::after {
+        content: '';
+        position: absolute;
+        inset: 3px;
+        background: var(--accent);
+        opacity: 0;
+        transform: scale(0);
+        transition: opacity 200ms ease, transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      #pcp-agenda .check-item.is-checked .check-box { border-color: var(--accent); }
+      #pcp-agenda .check-item.is-checked .check-box::after { opacity: 1; transform: scale(1); }
+      #pcp-agenda .check-item.is-checked .check-label {
+        text-decoration: line-through;
+        color: var(--fg-dim);
+      }
+      #pcp-agenda .check-label {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: rgba(240,237,230,0.8);
+      }
+    </style>
+  </section>
+
+  <!-- Reassuring -->
+  <section class="section" id="reassuring" data-findings-section>
+    <p class="section-kicker">Common alleles you don't carry</p>
+    <h2 class="section-title">Reassuring</h2>
+    <p class="section-lead">
+      What's <em>not</em> in your data matters too. None of these absences are guarantees,
+      but they're specific high-impact alleles that aren't in play for you.
+    </p>
+    <div class="findings-list"></div>
+  </section>
+
+  <!-- Limits -->
+  <section class="section" id="limits" data-findings-section>
+    <p class="section-kicker">What this analysis can't tell you</p>
+    <h2 class="section-title">Limits</h2>
+    <p class="section-lead">
+      A 23andMe chip + imputation handles common variants well but is blind to several
+      classes of clinically important variation. If any of the categories below become
+      relevant via family history or symptoms, get a clinical-grade test for that question.
+    </p>
+    <div class="findings-list"></div>
+  </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-marquee-wrap">
+      <div class="marquee-track">
+        <span>SIGNAL OVER NOISE</span><span class="marquee-dot">/</span>
+        <span>PRIVATE BY DEFAULT</span><span class="marquee-dot">/</span>
+        <span>EVIDENCE OVER ASTROLOGY</span><span class="marquee-dot">/</span>
+        <span>SIGNAL OVER NOISE</span><span class="marquee-dot">/</span>
+        <span>PRIVATE BY DEFAULT</span><span class="marquee-dot">/</span>
+        <span>EVIDENCE OVER ASTROLOGY</span><span class="marquee-dot">/</span>
+      </div>
+    </div>
+    <div class="footer-body">
+      <div>
+        <p class="footer-eyebrow">GENOME<span class="accent">//</span>REPORT</p>
+        <p id="meta-info" class="u-mono u-dim" style="font-size:0.7rem; margin-top:0.5rem; letter-spacing:0.1em;"></p>
+      </div>
+      <p class="footer-sub">
+        Research-grade analysis. Not a clinical diagnostic test. Discuss findings with a
+        board-certified genetic counsellor or physician before changing medications or
+        lifestyle materially.
+      </p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
