@@ -11,40 +11,46 @@ input:focus { outline: none; }
 details summary { cursor: pointer; }
 details summary::-webkit-details-marker { display: none; }
 
-/* ── Custom Properties ── */
+/* ── Custom Properties — Apothecary's Bog: deep-forest-swamp + biotech alchemy ── */
 :root {
-  /* Cool monolith palette */
-  --bg:        #06080c;          /* deep blue-black */
-  --bg-tint:   #06080c;
-  --bg-card:   #0c1018;          /* subtle elevation */
-  --bg-grid:   rgba(94, 226, 255, 0.025);
+  /* Peat-water dark green-black — moonless swamp ground */
+  --bg:        #0a1410;
+  --bg-tint:   #0a1410;
+  --bg-card:   #11201a;          /* damp earth, slight elevation */
+  --bg-grid:   rgba(120, 220, 160, 0.025);
 
-  --fg:        #e8eef5;
-  --fg-dim:    rgba(232, 238, 245, 0.55);
-  --fg-mute:   rgba(232, 238, 245, 0.32);
+  --fg:        #e8f2e6;          /* moonlight on lichen */
+  --fg-dim:    rgba(232, 242, 230, 0.55);
+  --fg-mute:   rgba(232, 242, 230, 0.32);
 
-  /* Electric cyan — HAL-eye-but-cyan, biotech terminal */
-  --accent:    #5ee2ff;          /* primary */
-  --accent-soft: rgba(94, 226, 255, 0.12);
-  --accent-bright: #82ecff;
-  --accent-deep: #1ba8d1;
+  /* Witchlight — phosphorescent fungi green */
+  --accent:        #6fe6a3;
+  --accent-soft:   rgba(111, 230, 163, 0.12);
+  --accent-bright: #95f0bd;
+  --accent-deep:   #2fa168;
+
+  /* Goblin amber — alchemist's brew, rune-stone glow */
+  --rune:        #d6a14a;
+  --rune-soft:   rgba(214, 161, 74, 0.15);
+  --rune-deep:   #8c6420;
 
   /* Tier indicators */
-  --tier-a:    #5ee2ff;          /* cyan — primary findings */
-  --tier-b:    #a4b8cc;          /* cool gray-blue */
-  --tier-c:    #7df0a8;          /* lab green — reassuring */
+  --tier-a:    #6fe6a3;          /* witchlight — primary findings */
+  --tier-b:    #d6a14a;          /* goblin amber — moderate */
+  --tier-c:    #82d8a3;          /* paler moss — reassuring */
 
-  /* Warning / critical — HAL red */
-  --warn:      #ff3a4a;
-  --warn-soft: rgba(255, 58, 74, 0.1);
+  /* Toadstool red — for dangerous brews */
+  --warn:      #e85a4a;
+  --warn-soft: rgba(232, 90, 74, 0.1);
 
-  --border:    rgba(232, 238, 245, 0.10);
-  --border-strong: rgba(232, 238, 245, 0.20);
-  --border-accent: rgba(94, 226, 255, 0.25);
+  --border:        rgba(180, 200, 170, 0.08);
+  --border-strong: rgba(180, 200, 170, 0.18);
+  --border-accent: rgba(111, 230, 163, 0.24);
 
-  --font-display: 'Space Grotesk', 'Helvetica Neue', sans-serif;
-  --font-mono: 'Space Mono', 'JetBrains Mono', 'Courier New', monospace;
-  --font-body: 'Space Grotesk', 'Helvetica Neue', sans-serif;
+  --font-display: 'Cormorant Garamond', 'Iowan Old Style', 'Georgia', serif;
+  --font-mono:    'Space Mono', 'JetBrains Mono', 'Courier New', monospace;
+  --font-rune:    'Cormorant Garamond', 'Trajan Pro', serif;
+  --font-body:    'Space Grotesk', 'Inter', system-ui, sans-serif;
 
   --nav-h:     58px;
   --pad-x:     clamp(1.25rem, 5vw, 4rem);
@@ -58,21 +64,26 @@ body {
   color: var(--fg);
   overflow-x: hidden;
 
-  /* Subtle grid backdrop — faint terminal feel */
+  /* Layered swamp ambience: organic radial fog patches over a faint terminal grid */
   background-image:
+    radial-gradient(ellipse 1200px 600px at 20% 10%,  rgba(111, 230, 163, 0.05), transparent 60%),
+    radial-gradient(ellipse 800px 400px  at 85% 80%,  rgba(214, 161, 74,  0.04), transparent 60%),
+    radial-gradient(ellipse 600px 300px  at 50% 50%,  rgba(47, 161, 104,  0.03), transparent 70%),
     linear-gradient(var(--bg-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
-  background-size: 64px 64px;
-  background-position: -1px -1px;
+  background-size: auto, auto, auto, 64px 64px, 64px 64px;
+  background-attachment: fixed, fixed, fixed, scroll, scroll;
 }
 
-/* ── Typography ── */
+/* ── Typography — display = grimoire serif, body = clean sans, mono = lab labels ── */
 h1, h2, h3, h4 {
   font-family: var(--font-display);
-  line-height: 1;
+  line-height: 1.05;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
+  font-style: italic;
 }
+h1, h2 { font-style: normal; }
 
 a { color: inherit; text-decoration: none; transition: color 200ms ease; }
 a:hover { color: var(--accent); }
