@@ -225,10 +225,19 @@ function renderPRS() {
 
 /* ── Render protocol (supplements + lifestyle) ── */
 function renderProtocol() {
-  if (typeof PROTOCOL === 'undefined') return;
   const supRoot  = document.getElementById('protocol-supplements');
   const lifeRoot = document.getElementById('protocol-lifestyle');
-  if (!supRoot || !lifeRoot) return;
+  if (!supRoot || !lifeRoot) {
+    console.warn('[protocol] containers not found');
+    return;
+  }
+  if (!PROTOCOL || (!PROTOCOL.supplements && !PROTOCOL.lifestyle)) {
+    console.warn('[protocol] PROTOCOL data missing or empty');
+    supRoot.innerHTML  = `<p style="padding:1rem; font-family: var(--font-mono); font-size: 0.6rem; color: var(--fg-dim);">No supplement recommendations defined.</p>`;
+    lifeRoot.innerHTML = `<p style="padding:1rem; font-family: var(--font-mono); font-size: 0.6rem; color: var(--fg-dim);">No lifestyle recommendations defined.</p>`;
+    return;
+  }
+  console.log('[protocol] rendering', PROTOCOL.supplements?.length, 'supplements +', PROTOCOL.lifestyle?.length, 'lifestyle items');
 
   const renderItem = (item, kind) => {
     const isAvoid = item.name && item.name.startsWith('⚠');
