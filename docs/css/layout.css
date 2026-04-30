@@ -104,36 +104,65 @@ body {
   overflow-y: auto;
 }
 .rail-header {
-  padding: 1rem 1.25rem;
+  padding: 1.1rem 1.25rem 1rem;
   border-bottom: 1px solid var(--border);
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  line-height: 1;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+  font-style: italic;
+  position: relative;
 }
-.rail-header .accent { color: var(--accent); }
+.rail-header::before {
+  /* faint witch-symbol bar above the title */
+  content: '☥';
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.4em;
+  color: var(--accent);
+  opacity: 0.7;
+  font-style: normal;
+  margin-bottom: 0.3rem;
+  text-shadow: 0 0 6px var(--accent);
+}
+.rail-header .accent {
+  color: var(--rune);
+  font-style: normal;
+  text-shadow: 0 0 8px rgba(214, 161, 74, 0.3);
+}
 .rail-header-sub {
   font-family: var(--font-mono);
-  font-size: 0.52rem;
-  letter-spacing: 0.22em;
+  font-size: 0.5rem;
+  letter-spacing: 0.24em;
   color: var(--fg-dim);
-  margin-top: 0.4rem;
+  margin-top: 0.5rem;
   font-weight: 400;
+  font-style: normal;
+  text-transform: uppercase;
 }
 .rail-section {
   padding: 0.85rem 0;
   border-bottom: 1px solid var(--border);
 }
 .rail-section-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0 1.25rem 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.5rem;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: var(--fg-mute);
+  color: var(--rune);
+  opacity: 0.85;
+}
+.rail-section-label::before {
+  content: '◈';
+  font-size: 0.7rem;
+  color: var(--rune);
+  opacity: 0.5;
 }
 .nav-sections {
   display: flex;
@@ -186,10 +215,10 @@ body {
   padding: 1rem 1.25rem;
   border-top: 1px solid var(--border);
   font-family: var(--font-mono);
-  font-size: 0.52rem;
-  letter-spacing: 0.12em;
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
   color: var(--fg-mute);
-  line-height: 1.6;
+  line-height: 1.7;
 }
 .rail-footer-status {
   display: flex;
@@ -197,15 +226,22 @@ body {
   gap: 0.5rem;
   margin-bottom: 0.5rem;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--tier-c);
+  letter-spacing: 0.2em;
+  color: var(--accent);
 }
 .rail-footer-status::before {
-  content: ''; width: 6px; height: 6px;
-  background: var(--tier-c);
-  border-radius: 50%;
-  box-shadow: 0 0 6px var(--tier-c);
-  animation: pulse-cyan 2s ease-in-out infinite;
+  content: '⚗'; width: auto; height: auto;
+  background: none;
+  border-radius: 0;
+  font-size: 0.85rem;
+  color: var(--rune);
+  text-shadow: 0 0 8px var(--rune);
+  animation: rune-flicker 3.2s ease-in-out infinite;
+}
+@keyframes rune-flicker {
+  0%, 92%, 100% { opacity: 1; text-shadow: 0 0 8px var(--rune); }
+  93%, 95%      { opacity: 0.4; text-shadow: 0 0 4px var(--rune); }
+  94%           { opacity: 1; text-shadow: 0 0 14px var(--rune); }
 }
 
 /* ── Main content area ── */
@@ -245,19 +281,24 @@ main {
 
 .hero-title {
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.03em;
-  line-height: 1;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.05;
   color: var(--fg);
   display: block;
   margin-bottom: 0.6rem;
+  text-shadow: 0 0 20px rgba(111, 230, 163, 0.08);
 }
 .hero-title br { display: none; }
 .hero-title .accent {
-  color: var(--accent);
-  text-shadow: 0 0 16px rgba(94, 226, 255, 0.4);
+  color: var(--rune);
+  font-style: normal;
+  font-weight: 400;
+  margin: 0 0.15em;
+  text-shadow: 0 0 14px rgba(214, 161, 74, 0.5);
 }
 
 .hero-subtitle-row {
@@ -354,12 +395,20 @@ main {
 }
 .section-title {
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-size: 1.9rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  line-height: 1;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0.005em;
+  line-height: 1.05;
   margin-bottom: 0.6rem;
+  color: var(--fg);
+}
+.section-title::first-letter {
+  /* drop-cap-ish illuminated initial */
+  color: var(--rune);
+  font-size: 1.15em;
+  text-shadow: 0 0 12px rgba(214, 161, 74, 0.4);
 }
 .section-lead {
   font-family: var(--font-mono);
@@ -481,9 +530,10 @@ main {
 }
 .action-gene {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  font-style: italic;
+  letter-spacing: 0;
   color: var(--fg);
   line-height: 1.05;
 }
@@ -535,10 +585,11 @@ main {
 }
 .finding-title {
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--fg);
   transition: color 200ms ease;
 }
@@ -765,10 +816,11 @@ main {
 
 .prs-card-trait {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.3rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--fg);
   line-height: 1.05;
 }
@@ -1294,10 +1346,11 @@ main {
 }
 .crossref-headline {
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
   line-height: 1.15;
   color: var(--fg);
   padding-right: 1.2rem;
@@ -1441,13 +1494,18 @@ main {
 }
 .footer-eyebrow {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.4rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--fg);
 }
-.footer-eyebrow .accent { color: var(--accent); }
+.footer-eyebrow .accent {
+  color: var(--rune);
+  font-style: normal;
+  text-shadow: 0 0 10px rgba(214, 161, 74, 0.4);
+}
 .footer-sub {
   font-family: var(--font-mono);
   font-size: 0.55rem;
