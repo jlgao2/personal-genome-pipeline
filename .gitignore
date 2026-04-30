@@ -1,0 +1,66 @@
+# =====================================================================
+# CRITICAL: this .gitignore prevents committing personal genotype data
+# and clinical findings. DO NOT loosen any of these rules without
+# auditing very carefully.
+# =====================================================================
+
+# ── Personal genome data (NEVER commit) ──
+data/
+genome_*.zip
+genome_*.txt
+*.23andme.txt
+*ancestrydna*.txt
+*myheritage*.txt
+
+# ── Personal medical records / PDFs (NEVER commit) ──
+*.pdf
+requested_record*
+
+# ── Reference data (multi-GB downloads, regenerate via setup) ──
+refs/
+
+# ── Pipeline outputs containing personal findings (NEVER commit) ──
+output/raw_findings/
+output/qc/
+output/pharmcat/
+output/action_plan.md
+output/genetic_clinical_correlation.md
+output/README.md
+
+# ── Dashboard data (contains personal findings — use data.example.js) ──
+output/web/js/data.js
+
+# ── Logs may contain sample-specific info ──
+logs/
+*.log
+
+# ── Temp / build artefacts ──
+.junk_topmed_indexes/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.venv/
+venv/
+*.egg-info/
+.coverage
+.pytest_cache/
+
+# ── Editor / IDE ──
+.vscode/
+.idea/
+*.swp
+*~
+
+# ── Plan files / claude scaffolding (this user's specific work) ──
+.claude/
+**/luminous-dreaming-trinket.md
+
+# ── OS junk ──
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# ── Allow the marker files for empty dirs ──
+!data/.keep
+!refs/.keep
