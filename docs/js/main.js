@@ -2,7 +2,7 @@
 
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS, PROTOCOL
-} from './data.js?v=20260430c';
+} from './data.js?v=20260430d';
 
 /* ── Render hero stats ── */
 function renderStats() {
@@ -215,17 +215,15 @@ function renderPRSOverview() {
   const root = document.getElementById('prs-overview');
   if (!root) return;
 
-  const VB_W = 800, VB_H = 240;
+  const VB_W = 700, VB_H = 240;
   const PAD_L = 30, PAD_R = 30;
-  const BASE_Y = 200;        // x-axis position
-  const APEX_Y = 110;        // top of bell
+  const BASE_Y = 200;
+  const APEX_Y = 110;
   const X_ZERO = VB_W / 2;
-  const X_PER_SIGMA = (VB_W - PAD_L - PAD_R) / 6;  // 6σ visible: -3 to +3
-
+  const X_PER_SIGMA = (VB_W - PAD_L - PAD_R) / 6;
   const zToX = z => X_ZERO + z * X_PER_SIGMA;
 
-  // Bell curve: sample at z=-3..+3, height by standard normal density
-  const NORM_MAX = 0.4;  // density at z=0
+  const NORM_MAX = 0.4;
   let curveD = `M ${PAD_L} ${BASE_Y} `;
   for (let z = -3; z <= 3; z += 0.1) {
     const density = Math.exp(-(z * z) / 2) / Math.sqrt(2 * Math.PI);
@@ -235,15 +233,14 @@ function renderPRSOverview() {
   }
   curveD += `L ${VB_W - PAD_R} ${BASE_Y} Z`;
 
-  // Filter to PRS with z-score, sort by z for staggering
-  const withZ = PRS.filter(p => p.z != null).slice().sort((a, b) => a.z - b.z);
-  const lowConf = PRS.filter(p => p.z == null);
+  // Sort all (with-z and low-conf) by trait name for the list, but markers placed by z
+  const sortedByZ = PRS.filter(p => p.z != null).slice().sort((a, b) => a.z - b.z);
+  const lowConf   = PRS.filter(p => p.z == null);
+  const sortedByName = PRS.slice().sort((a, b) => a.trait.localeCompare(b.trait));
 
-  // Stagger labels: alternate y to avoid overlap
-  // Labels go ABOVE the baseline. 3 row heights to spread out.
+  // Stagger marker labels at 3 row heights
   const ROWS = [40, 60, 80];
-
-  const markers = withZ.map((p, i) => {
+  const markers = sortedByZ.map((p, i) => {
     const x = zToX(Math.max(-3, Math.min(3, p.z)));
     const labelY = ROWS[i % ROWS.length];
     const { c, glow } = prsColorForZ(p.z);
@@ -270,85 +267,92 @@ function renderPRSOverview() {
     `;
   }).join('');
 
-  const lowConfEls = lowConf.map(p => `
-    <span class="prs-overview-low-chip" data-pgs="${p.pgs}" data-trait="${p.trait}">
-      ${p.trait} <span style="opacity:0.6">— low coverage</span>
-    </span>
-  `).join('');
+  // Side list — every PRS, including low-confidence
+  const listItems = sortedByName.map(p => {
+    const isLow = p.z == null;
+    const { c } = isLow ? { c: 'var(--fg-mute)' } : prsColorForZ(p.z);
+    const zText = isLow
+      ? 'low coverage'
+      : `z=${p.z >= 0 ? '+' : ''}${p.z.toFixed(1)}σ${p.percentile != null ? ` · ${p.percentile}${pctSuffix(p.percentile)}` : ''}`;
+    return `
+      <div class="prs-list-item${isLow ? ' prs-list-item--low' : ''}" data-pgs="${p.pgs}" data-trait="${p.trait}">
+        <span class="prs-list-item-dot" style="background: ${c}; ${isLow ? '' : `box-shadow: 0 0 6px ${c};`}"></span>
+        <span class="prs-list-item-name">${p.trait}</span>
+        <span class="prs-list-item-z">${zText}</span>
+      </div>
+    `;
+  }).join('');
 
   root.innerHTML = `
-    <svg class="prs-overview-svg" viewBox="0 0 ${VB_W} ${VB_H}" preserveAspectRatio="xMidYMid meet">
-      <!-- Population bell curve -->
-      <path class="prs-curve" d="${curveD}" />
-      <!-- Axis -->
-      <line class="prs-axis" x1="${PAD_L}" y1="${BASE_Y}" x2="${VB_W - PAD_R}" y2="${BASE_Y}" />
-      ${tickEls}
-      ${markers}
-    </svg>
-    ${lowConf.length ? `
-      <div class="prs-overview-low">
-        <strong>No graph (insufficient coverage):</strong>
-        ${lowConfEls}
+    <aside class="prs-overview-list" id="prs-overview-list">
+      <div class="prs-overview-list-header">Traits · click to highlight</div>
+      ${listItems}
+    </aside>
+    <div class="prs-overview-chart">
+      <svg class="prs-overview-svg" viewBox="0 0 ${VB_W} ${VB_H}" preserveAspectRatio="xMidYMid meet">
+        <path class="prs-curve" d="${curveD}" />
+        <line class="prs-axis" x1="${PAD_L}" y1="${BASE_Y}" x2="${VB_W - PAD_R}" y2="${BASE_Y}" />
+        ${tickEls}
+        ${markers}
+      </svg>
+      <div class="prs-overview-legend">
+        <span class="prs-overview-legend-item">
+          <span class="prs-overview-legend-dot" style="background: var(--warn); box-shadow: 0 0 6px var(--warn);"></span>Elevated (z ≥ +1.5σ)
+        </span>
+        <span class="prs-overview-legend-item">
+          <span class="prs-overview-legend-dot" style="background: var(--accent); box-shadow: 0 0 6px var(--accent);"></span>Mild direction
+        </span>
+        <span class="prs-overview-legend-item">
+          <span class="prs-overview-legend-dot" style="background: var(--fg-dim);"></span>Neutral (|z| &lt; 0.4σ)
+        </span>
+        <span class="prs-overview-legend-item">
+          <span class="prs-overview-legend-dot" style="background: var(--tier-c); box-shadow: 0 0 6px var(--tier-c);"></span>Below avg (z ≤ −1.5σ)
+        </span>
       </div>
-    ` : ''}
-    <div class="prs-overview-legend">
-      <span class="prs-overview-legend-item">
-        <span class="prs-overview-legend-dot" style="background: var(--warn); box-shadow: 0 0 6px var(--warn);"></span>Elevated (z ≥ +1.5σ)
-      </span>
-      <span class="prs-overview-legend-item">
-        <span class="prs-overview-legend-dot" style="background: var(--accent); box-shadow: 0 0 6px var(--accent);"></span>Mild direction
-      </span>
-      <span class="prs-overview-legend-item">
-        <span class="prs-overview-legend-dot" style="background: var(--fg-dim);"></span>Neutral (|z| &lt; 0.4σ)
-      </span>
-      <span class="prs-overview-legend-item">
-        <span class="prs-overview-legend-dot" style="background: var(--tier-c); box-shadow: 0 0 6px var(--tier-c);"></span>Below avg (z ≤ −1.5σ)
-      </span>
     </div>
   `;
 
-  // ── Wire interactivity ──
-  const cards = () => document.querySelectorAll('.prs-card');
-  const cardByPgs = (pgs) => {
-    const all = cards();
-    const list = PRS.filter(x => x.z != null).sort((a, b) => a.z - b.z);
-    // We don't have data-pgs on cards; lookup by trait order in PRS array
-    const idx = PRS.findIndex(x => x.pgs === pgs);
-    return idx >= 0 ? all[idx] : null;
-  };
+  // ── Wire bidirectional interactivity ──
+  const cardByPgs = (pgs) => document.querySelector(`.prs-card[data-pgs="${pgs}"]`);
+  const markerByPgs = (pgs) => root.querySelector(`.prs-marker[data-pgs="${pgs}"]`);
+  const listItemByPgs = (pgs) => root.querySelector(`.prs-list-item[data-pgs="${pgs}"]`);
 
+  function setActive(pgs, on) {
+    const m = markerByPgs(pgs);
+    const li = listItemByPgs(pgs);
+    const card = cardByPgs(pgs);
+    [m, li, card].forEach(el => {
+      if (!el) return;
+      if (on) {
+        el.classList.add(el.classList.contains('prs-card') ? 'is-highlighted' : 'is-active');
+      } else {
+        el.classList.remove(el.classList.contains('prs-card') ? 'is-highlighted' : 'is-active');
+      }
+    });
+  }
+
+  function scrollToCard(pgs) {
+    const card = cardByPgs(pgs);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('is-highlighted');
+    setTimeout(() => card.classList.remove('is-highlighted'), 2400);
+  }
+
+  // Markers (chart side)
   root.querySelectorAll('.prs-marker').forEach(m => {
     const pgs = m.dataset.pgs;
-    m.addEventListener('mouseenter', () => {
-      m.classList.add('is-active');
-      const card = cardByPgs(pgs);
-      if (card) card.classList.add('is-highlighted');
-    });
-    m.addEventListener('mouseleave', () => {
-      m.classList.remove('is-active');
-      const card = cardByPgs(pgs);
-      if (card) card.classList.remove('is-highlighted');
-    });
-    m.addEventListener('click', () => {
-      const card = cardByPgs(pgs);
-      if (card) {
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        card.classList.add('is-highlighted');
-        setTimeout(() => card.classList.remove('is-highlighted'), 2400);
-      }
-    });
+    m.addEventListener('mouseenter', () => setActive(pgs, true));
+    m.addEventListener('mouseleave', () => setActive(pgs, false));
+    m.addEventListener('click', () => scrollToCard(pgs));
   });
 
-  root.querySelectorAll('.prs-overview-low-chip').forEach(c => {
-    c.addEventListener('click', () => {
-      const pgs = c.dataset.pgs;
-      const card = cardByPgs(pgs);
-      if (card) {
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        card.classList.add('is-highlighted');
-        setTimeout(() => card.classList.remove('is-highlighted'), 2400);
-      }
-    });
+  // List items (sidebar)
+  root.querySelectorAll('.prs-list-item').forEach(li => {
+    const pgs = li.dataset.pgs;
+    li.addEventListener('mouseenter', () => setActive(pgs, true));
+    li.addEventListener('mouseleave', () => setActive(pgs, false));
+    li.addEventListener('click', () => scrollToCard(pgs));
   });
 }
 

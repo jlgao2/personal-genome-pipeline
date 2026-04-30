@@ -945,11 +945,99 @@ main {
 
 /* ── PRS combined overview chart (all traits on one bell curve) ── */
 .prs-overview {
-  background: var(--bg-card);
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1px;
+  background: var(--border);
   border: 1px solid var(--border);
-  padding: 1rem 1.25rem 0.85rem;
   margin-bottom: 1.5rem;
   position: relative;
+}
+@media (max-width: 760px) {
+  .prs-overview { grid-template-columns: 1fr; }
+}
+.prs-overview-list {
+  background: var(--bg-card);
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 0.4rem 0;
+}
+.prs-overview-list-header {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  z-index: 1;
+}
+.prs-list-item {
+  padding: 0.6rem 0.85rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.55rem;
+  align-items: center;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 220ms ease, padding-left 220ms ease;
+  position: relative;
+}
+.prs-list-item:hover {
+  background: var(--accent-soft);
+  padding-left: 1.05rem;
+}
+.prs-list-item.is-active {
+  background: var(--accent-soft);
+  padding-left: 1.05rem;
+}
+.prs-list-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.prs-list-item-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.prs-list-item-name {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  line-height: 1.15;
+}
+.prs-list-item-z {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: var(--fg-dim);
+  text-align: right;
+  white-space: nowrap;
+}
+.prs-list-item.is-active .prs-list-item-z { color: var(--accent); }
+.prs-list-item--low {
+  opacity: 0.6;
+}
+.prs-list-item--low .prs-list-item-z {
+  font-style: italic;
+}
+
+.prs-overview-chart {
+  background: var(--bg-card);
+  padding: 1rem 1.25rem 0.85rem;
+  display: flex;
+  flex-direction: column;
 }
 .prs-overview-svg {
   width: 100%;
