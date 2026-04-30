@@ -2,7 +2,7 @@
 
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS, PROTOCOL
-} from './data.js?v=20260430b';
+} from './data.js?v=20260430c';
 
 /* ── Render hero stats ── */
 function renderStats() {
@@ -203,12 +203,161 @@ function pctSuffix(n) {
   }
 }
 
+/* ── Render combined interactive PRS overview chart ── */
+function prsColorForZ(z) {
+  if (z >= 1.5) return { c: 'var(--warn)', glow: 'rgba(255, 58, 74, 0.6)' };
+  if (z <= -1.5) return { c: 'var(--tier-c)', glow: 'rgba(125, 240, 168, 0.6)' };
+  if (Math.abs(z) < 0.4) return { c: 'var(--fg-dim)', glow: 'rgba(232, 238, 245, 0.3)' };
+  return { c: 'var(--accent)', glow: 'rgba(94, 226, 255, 0.6)' };
+}
+
+function renderPRSOverview() {
+  const root = document.getElementById('prs-overview');
+  if (!root) return;
+
+  const VB_W = 800, VB_H = 240;
+  const PAD_L = 30, PAD_R = 30;
+  const BASE_Y = 200;        // x-axis position
+  const APEX_Y = 110;        // top of bell
+  const X_ZERO = VB_W / 2;
+  const X_PER_SIGMA = (VB_W - PAD_L - PAD_R) / 6;  // 6σ visible: -3 to +3
+
+  const zToX = z => X_ZERO + z * X_PER_SIGMA;
+
+  // Bell curve: sample at z=-3..+3, height by standard normal density
+  const NORM_MAX = 0.4;  // density at z=0
+  let curveD = `M ${PAD_L} ${BASE_Y} `;
+  for (let z = -3; z <= 3; z += 0.1) {
+    const density = Math.exp(-(z * z) / 2) / Math.sqrt(2 * Math.PI);
+    const x = zToX(z);
+    const y = BASE_Y - (density / NORM_MAX) * (BASE_Y - APEX_Y);
+    curveD += `L ${x.toFixed(1)} ${y.toFixed(1)} `;
+  }
+  curveD += `L ${VB_W - PAD_R} ${BASE_Y} Z`;
+
+  // Filter to PRS with z-score, sort by z for staggering
+  const withZ = PRS.filter(p => p.z != null).slice().sort((a, b) => a.z - b.z);
+  const lowConf = PRS.filter(p => p.z == null);
+
+  // Stagger labels: alternate y to avoid overlap
+  // Labels go ABOVE the baseline. 3 row heights to spread out.
+  const ROWS = [40, 60, 80];
+
+  const markers = withZ.map((p, i) => {
+    const x = zToX(Math.max(-3, Math.min(3, p.z)));
+    const labelY = ROWS[i % ROWS.length];
+    const { c, glow } = prsColorForZ(p.z);
+    const safeName = p.trait.length > 18 ? p.trait.split(' ').slice(0, 2).join(' ') : p.trait;
+    return `
+      <g class="prs-marker" data-pgs="${p.pgs}" data-trait="${p.trait}">
+        <line class="prs-marker-line" x1="${x}" y1="${BASE_Y}" x2="${x}" y2="${labelY + 12}"
+              stroke="${c}" />
+        <text class="prs-marker-label" x="${x}" y="${labelY}">${safeName}</text>
+        <text class="prs-marker-z" x="${x}" y="${labelY + 11}">z=${p.z >= 0 ? '+' : ''}${p.z.toFixed(1)}</text>
+        <circle class="prs-marker-dot" cx="${x}" cy="${BASE_Y}" r="5"
+                fill="${c}" style="filter: drop-shadow(0 0 6px ${glow})" />
+      </g>
+    `;
+  }).join('');
+
+  const tickEls = [-3, -2, -1, 0, 1, 2, 3].map(z => {
+    const x = zToX(z);
+    return `
+      <line class="prs-tick" x1="${x}" y1="${BASE_Y}" x2="${x}" y2="${BASE_Y + 5}" />
+      <text class="prs-tick-label" x="${x}" y="${BASE_Y + 18}" text-anchor="middle">
+        ${z > 0 ? '+' : ''}${z}σ
+      </text>
+    `;
+  }).join('');
+
+  const lowConfEls = lowConf.map(p => `
+    <span class="prs-overview-low-chip" data-pgs="${p.pgs}" data-trait="${p.trait}">
+      ${p.trait} <span style="opacity:0.6">— low coverage</span>
+    </span>
+  `).join('');
+
+  root.innerHTML = `
+    <svg class="prs-overview-svg" viewBox="0 0 ${VB_W} ${VB_H}" preserveAspectRatio="xMidYMid meet">
+      <!-- Population bell curve -->
+      <path class="prs-curve" d="${curveD}" />
+      <!-- Axis -->
+      <line class="prs-axis" x1="${PAD_L}" y1="${BASE_Y}" x2="${VB_W - PAD_R}" y2="${BASE_Y}" />
+      ${tickEls}
+      ${markers}
+    </svg>
+    ${lowConf.length ? `
+      <div class="prs-overview-low">
+        <strong>No graph (insufficient coverage):</strong>
+        ${lowConfEls}
+      </div>
+    ` : ''}
+    <div class="prs-overview-legend">
+      <span class="prs-overview-legend-item">
+        <span class="prs-overview-legend-dot" style="background: var(--warn); box-shadow: 0 0 6px var(--warn);"></span>Elevated (z ≥ +1.5σ)
+      </span>
+      <span class="prs-overview-legend-item">
+        <span class="prs-overview-legend-dot" style="background: var(--accent); box-shadow: 0 0 6px var(--accent);"></span>Mild direction
+      </span>
+      <span class="prs-overview-legend-item">
+        <span class="prs-overview-legend-dot" style="background: var(--fg-dim);"></span>Neutral (|z| &lt; 0.4σ)
+      </span>
+      <span class="prs-overview-legend-item">
+        <span class="prs-overview-legend-dot" style="background: var(--tier-c); box-shadow: 0 0 6px var(--tier-c);"></span>Below avg (z ≤ −1.5σ)
+      </span>
+    </div>
+  `;
+
+  // ── Wire interactivity ──
+  const cards = () => document.querySelectorAll('.prs-card');
+  const cardByPgs = (pgs) => {
+    const all = cards();
+    const list = PRS.filter(x => x.z != null).sort((a, b) => a.z - b.z);
+    // We don't have data-pgs on cards; lookup by trait order in PRS array
+    const idx = PRS.findIndex(x => x.pgs === pgs);
+    return idx >= 0 ? all[idx] : null;
+  };
+
+  root.querySelectorAll('.prs-marker').forEach(m => {
+    const pgs = m.dataset.pgs;
+    m.addEventListener('mouseenter', () => {
+      m.classList.add('is-active');
+      const card = cardByPgs(pgs);
+      if (card) card.classList.add('is-highlighted');
+    });
+    m.addEventListener('mouseleave', () => {
+      m.classList.remove('is-active');
+      const card = cardByPgs(pgs);
+      if (card) card.classList.remove('is-highlighted');
+    });
+    m.addEventListener('click', () => {
+      const card = cardByPgs(pgs);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('is-highlighted');
+        setTimeout(() => card.classList.remove('is-highlighted'), 2400);
+      }
+    });
+  });
+
+  root.querySelectorAll('.prs-overview-low-chip').forEach(c => {
+    c.addEventListener('click', () => {
+      const pgs = c.dataset.pgs;
+      const card = cardByPgs(pgs);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('is-highlighted');
+        setTimeout(() => card.classList.remove('is-highlighted'), 2400);
+      }
+    });
+  });
+}
+
 /* ── Render PRS cards ── */
 function renderPRS() {
   const root = document.getElementById('prs-grid');
   if (!root) return;
   root.innerHTML = PRS.map(p => `
-    <article class="prs-card">
+    <article class="prs-card" data-pgs="${p.pgs}">
       <span class="prs-card-direction" data-dir="${p.direction}">${p.direction_label}</span>
       <h3 class="prs-card-trait">${p.trait}</h3>
       ${prsGraphSvg(p.z, p.percentile)}
@@ -441,6 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderActions();
   renderFindingsBySection();
   renderPRS();
+  renderPRSOverview();
   renderProtocol();
   renderCrossRef();
   renderLabs();

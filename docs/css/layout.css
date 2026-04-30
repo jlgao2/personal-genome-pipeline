@@ -943,6 +943,170 @@ main {
   border-top: 1px solid var(--border);
 }
 
+/* ── PRS combined overview chart (all traits on one bell curve) ── */
+.prs-overview {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 1rem 1.25rem 0.85rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+.prs-overview-svg {
+  width: 100%;
+  height: 240px;
+  display: block;
+}
+.prs-overview .prs-curve {
+  fill: var(--accent-soft);
+  stroke: var(--accent-deep);
+  stroke-width: 0.8;
+  opacity: 0.85;
+}
+.prs-overview .prs-axis {
+  stroke: var(--border-strong);
+  stroke-width: 0.6;
+}
+.prs-overview .prs-tick {
+  stroke: var(--fg-dim);
+  stroke-width: 0.5;
+}
+.prs-overview .prs-tick-label {
+  fill: var(--fg-mute);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+.prs-overview .prs-marker {
+  cursor: pointer;
+  transition: transform 220ms var(--ease-out-expo);
+}
+.prs-overview .prs-marker-line {
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  opacity: 0.55;
+  transition: opacity 200ms ease, stroke-width 200ms ease;
+}
+.prs-overview .prs-marker-dot {
+  stroke: var(--bg);
+  stroke-width: 1.4;
+  transition: r 220ms var(--ease-out-expo);
+}
+.prs-overview .prs-marker-label {
+  fill: var(--fg);
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+  transition: fill 200ms ease;
+}
+.prs-overview .prs-marker-z {
+  fill: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-anchor: middle;
+  pointer-events: none;
+  letter-spacing: 0.05em;
+}
+.prs-overview .prs-marker:hover .prs-marker-line,
+.prs-overview .prs-marker.is-active .prs-marker-line {
+  opacity: 1;
+  stroke-width: 1.5;
+}
+.prs-overview .prs-marker:hover .prs-marker-dot,
+.prs-overview .prs-marker.is-active .prs-marker-dot {
+  r: 7;
+}
+.prs-overview .prs-marker:hover .prs-marker-label,
+.prs-overview .prs-marker.is-active .prs-marker-label {
+  fill: var(--accent);
+}
+
+/* "Low coverage" footer strip */
+.prs-overview-low {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+}
+.prs-overview-low strong {
+  color: var(--fg-dim);
+  font-weight: 700;
+}
+.prs-overview-low-chip {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  background: var(--bg);
+  padding: 0.18rem 0.5rem;
+  border: 1px dashed var(--border-strong);
+  cursor: pointer;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+.prs-overview-low-chip:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.prs-overview-legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.prs-overview-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.prs-overview-legend-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+.prs-detail-heading {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 1.2rem 0 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.prs-detail-heading::before {
+  content: '';
+  width: 16px; height: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+/* Highlighted PRS card (when corresponding overview marker is active) */
+.prs-card.is-highlighted {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  box-shadow: 0 0 0 2px var(--accent-soft), 0 0 24px rgba(94, 226, 255, 0.25);
+}
+
 /* ── PRS distribution graph (z-score visualization) ── */
 .prs-graph-wrap {
   margin: 0.4rem 0 0.5rem;

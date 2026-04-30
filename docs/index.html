@@ -98,8 +98,8 @@
 
   <link href="https://api.fontshare.com/v2/css?f[]=space-grotesk@300,400,500,700&f[]=space-mono@400,700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/base.css?v=20260430b" />
-  <link rel="stylesheet" href="css/layout.css?v=20260430b" />
+  <link rel="stylesheet" href="css/base.css?v=20260430c" />
+  <link rel="stylesheet" href="css/layout.css?v=20260430c" />
 </head>
 <body>
 
@@ -285,9 +285,14 @@
     <p class="section-lead">
       Weighted sums across 18.6 million SNPs from 10 PGS Catalog scoring files.
       Direction is interpretable; precise percentiles require ancestry-matched reference
-      distributions (proper Dockerised pgsc_calc run, future work). Reading: green = low
-      direction, amber = elevated direction, gray = neutral or low coverage.
+      distributions. Hover a marker on the chart to highlight a trait; click to jump
+      to the detail card.
     </p>
+
+    <!-- Combined interactive overview -->
+    <div class="prs-overview" id="prs-overview"></div>
+
+    <h3 class="prs-detail-heading">Per-trait detail</h3>
     <div class="prs-grid" id="prs-grid"></div>
   </section>
 
@@ -436,6 +441,6 @@
     </div>
   </footer>
 
-  <script type="module" src="js/main.js?v=20260430b"></script>
+  <script type="module" src="js/main.js?v=20260430c"></script>
 </body>
 </html>
