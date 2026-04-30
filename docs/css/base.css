@@ -49,10 +49,10 @@ details summary::-webkit-details-marker { display: none; }
   --border-strong: rgba(160, 200, 170, 0.14);
   --border-accent: rgba(122, 240, 168, 0.22);
 
-  --font-display: 'Cormorant Garamond', 'Iowan Old Style', 'Georgia', serif;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   --font-mono:    'Space Mono', 'JetBrains Mono', 'Courier New', monospace;
-  --font-rune:    'Cormorant Garamond', 'Trajan Pro', serif;
   --font-body:    'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-narrative: 'Space Mono', 'JetBrains Mono', monospace;
 
   --nav-h:     58px;
   --pad-x:     clamp(1.25rem, 5vw, 4rem);
@@ -115,15 +115,14 @@ body::after {
     rgba(0, 0, 0, 0.6) 100%);
 }
 
-/* ── Typography — display = grimoire serif, body = clean sans, mono = lab labels ── */
+/* ── Typography — terminal-narrative game style: clean sans + mono ── */
 h1, h2, h3, h4 {
   font-family: var(--font-display);
-  line-height: 1.05;
+  line-height: 1.1;
   font-weight: 700;
-  letter-spacing: 0;
-  font-style: italic;
+  letter-spacing: -0.01em;
+  font-style: normal;
 }
-h1, h2 { font-style: normal; }
 
 a { color: inherit; text-decoration: none; transition: color 200ms ease; }
 a:hover { color: var(--accent); }

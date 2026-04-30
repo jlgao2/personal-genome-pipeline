@@ -2,7 +2,7 @@
 
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS, PROTOCOL
-} from './data.js?v=20260430i';
+} from './data.js?v=20260430j';
 
 /* ── Render hero stats ── */
 function renderStats() {
