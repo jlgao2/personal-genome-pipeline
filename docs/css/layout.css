@@ -802,6 +802,147 @@ main {
 }
 .prs-card-meta strong { color: var(--accent); font-weight: 700; }
 
+/* ── Protocol (supplements + lifestyle) ── */
+.protocol-subhead {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 1.6rem 0 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.protocol-subhead::before {
+  content: '';
+  width: 16px; height: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+.protocol-subhead:first-of-type { margin-top: 0; }
+
+.protocol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.protocol-card {
+  background: var(--bg-card);
+  padding: 1rem 1.1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  transition: background 220ms ease;
+}
+.protocol-card:hover {
+  background: color-mix(in srgb, var(--bg-card) 80%, var(--accent));
+}
+.protocol-card--avoid {
+  background: color-mix(in srgb, var(--bg-card) 90%, var(--warn));
+}
+.protocol-card--avoid:hover {
+  background: color-mix(in srgb, var(--bg-card) 75%, var(--warn));
+}
+.protocol-tier {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.45rem;
+  letter-spacing: 0.22em;
+  padding: 0.15rem 0.42rem;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+}
+.protocol-tier[data-tier="A"] { color: var(--tier-a); }
+.protocol-tier[data-tier="B"] { color: var(--tier-b); }
+.protocol-tier[data-tier="C"] { color: var(--tier-c); }
+.protocol-card--avoid .protocol-tier {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.protocol-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  line-height: 1.1;
+  padding-right: 3rem;
+}
+.protocol-card--avoid .protocol-name { color: var(--warn); }
+
+.protocol-row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.18rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
+.protocol-row--head { padding-top: 0.3rem; }
+.protocol-row-label {
+  font-size: 0.48rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.protocol-row-value {
+  color: var(--fg);
+  letter-spacing: 0.04em;
+}
+.protocol-row-value--strong {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+.protocol-card--avoid .protocol-row-value--strong { color: var(--warn); }
+.protocol-row-value--mono {
+  font-size: 0.58rem;
+  color: rgba(232, 238, 245, 0.65);
+  word-break: break-word;
+}
+
+.protocol-drivers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.protocol-driver {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--border-accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.protocol-card--avoid .protocol-driver {
+  border-color: rgba(255, 58, 74, 0.4);
+  color: var(--warn);
+  background: rgba(255, 58, 74, 0.08);
+}
+
+.protocol-rationale {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: rgba(232, 238, 245, 0.78);
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+
 /* ── Cross-reference (clinical) ── */
 .crossref-grid {
   display: grid;

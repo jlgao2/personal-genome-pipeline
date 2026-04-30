@@ -1,7 +1,7 @@
 /* ── Genome Report — interactive renderer ── */
 
 import {
-  META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
+  META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS, PROTOCOL
 } from './data.js';
 
 /* ── Render hero stats ── */
@@ -142,6 +142,49 @@ function renderPRS() {
       </div>
     </article>
   `).join('');
+}
+
+/* ── Render protocol (supplements + lifestyle) ── */
+function renderProtocol() {
+  if (typeof PROTOCOL === 'undefined') return;
+  const supRoot  = document.getElementById('protocol-supplements');
+  const lifeRoot = document.getElementById('protocol-lifestyle');
+  if (!supRoot || !lifeRoot) return;
+
+  const renderItem = (item, kind) => {
+    const isAvoid = item.name && item.name.startsWith('⚠');
+    const tagsHtml = (item.driven_by || [])
+      .map(d => `<span class="protocol-driver">${d}</span>`)
+      .join('');
+    const cadence = item.dose || item.cadence || '';
+    const cadenceLabel = kind === 'supplement' ? 'Dose' : 'Cadence';
+    const timingRow = item.timing
+      ? `<div class="protocol-row"><span class="protocol-row-label">Timing</span><span class="protocol-row-value">${item.timing}</span></div>`
+      : '';
+    const productRow = item.product
+      ? `<div class="protocol-row"><span class="protocol-row-label">Product</span><span class="protocol-row-value protocol-row-value--mono">${item.product}</span></div>`
+      : '';
+    return `
+      <article class="protocol-card${isAvoid ? ' protocol-card--avoid' : ''}" data-tier="${item.tier}">
+        <span class="protocol-tier" data-tier="${item.tier}">Tier ${item.tier}</span>
+        <h4 class="protocol-name">${item.name}</h4>
+        <div class="protocol-row protocol-row--head">
+          <span class="protocol-row-label">${cadenceLabel}</span>
+          <span class="protocol-row-value protocol-row-value--strong">${cadence}</span>
+        </div>
+        ${timingRow}
+        <div class="protocol-row">
+          <span class="protocol-row-label">Driven by</span>
+          <span class="protocol-drivers">${tagsHtml}</span>
+        </div>
+        <p class="protocol-rationale">${item.rationale}</p>
+        ${productRow}
+      </article>
+    `;
+  };
+
+  supRoot.innerHTML  = (PROTOCOL.supplements || []).map(i => renderItem(i, 'supplement')).join('');
+  lifeRoot.innerHTML = (PROTOCOL.lifestyle    || []).map(i => renderItem(i, 'lifestyle')).join('');
 }
 
 /* ── Render cross-reference cards ── */
@@ -310,6 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderActions();
   renderFindingsBySection();
   renderPRS();
+  renderProtocol();
   renderCrossRef();
   renderLabs();
   renderAgenda();
