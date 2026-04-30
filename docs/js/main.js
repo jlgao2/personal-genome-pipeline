@@ -2,7 +2,7 @@
 
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS, PROTOCOL
-} from './data.js?v=20260430d';
+} from './data.js?v=20260430e';
 
 /* ── Render hero stats ── */
 function renderStats() {
@@ -356,7 +356,7 @@ function renderPRSOverview() {
   });
 }
 
-/* ── Render PRS cards ── */
+/* ── Render PRS cards (no per-card graph — overview chart at top covers it) ── */
 function renderPRS() {
   const root = document.getElementById('prs-grid');
   if (!root) return;
@@ -364,7 +364,6 @@ function renderPRS() {
     <article class="prs-card" data-pgs="${p.pgs}">
       <span class="prs-card-direction" data-dir="${p.direction}">${p.direction_label}</span>
       <h3 class="prs-card-trait">${p.trait}</h3>
-      ${prsGraphSvg(p.z, p.percentile)}
       <p class="prs-card-headline">${p.headline}</p>
       <p class="prs-card-detail">${p.detail}</p>
       <div class="prs-card-meta">
