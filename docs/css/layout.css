@@ -121,10 +121,11 @@ body {
   padding: 1.1rem 1.25rem 1rem;
   border-bottom: 1px solid var(--border);
   font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-size: 1.15rem;
+  font-weight: 500;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
   line-height: 1.05;
   position: relative;
 }
@@ -145,6 +146,7 @@ body {
 }
 .rail-header .accent {
   color: var(--rune);
+  font-style: normal;
   text-shadow: 0 0 10px var(--rune-glow);
 }
 .rail-header-sub {
@@ -295,9 +297,9 @@ main {
 
 .hero-title {
   font-family: var(--font-display);
-  font-size: clamp(1.9rem, 3.8vw, 2.8rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+  font-weight: 500;
+  letter-spacing: 0;
   line-height: 1;
   color: var(--fg);
   display: flex;
@@ -311,19 +313,19 @@ main {
 }
 .hero-title br { display: none; }
 .hero-name {
-  /* tasteful serif italic for the subject's name — narrative-record feel */
-  font-family: var(--font-prose);
+  font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .hero-meta {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-weight: 400;
-  font-size: 0.55em;
+  font-size: 0.42em;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   color: var(--fg-dim);
+  align-self: center;
 }
 .hero-title .accent {
   color: var(--rune);
@@ -428,12 +430,13 @@ main {
 }
 .section-title {
   font-family: var(--font-display);
-  font-size: 1.55rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  margin-bottom: 0.6rem;
+  font-size: 1.95rem;
+  font-weight: 500;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.05;
+  margin-bottom: 0.65rem;
   color: var(--fg);
   display: inline-flex;
   align-items: baseline;
@@ -459,15 +462,13 @@ main {
   50%      { opacity: 0.45; transform: scale(0.7); }
 }
 .section-lead {
-  font-family: var(--font-prose);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 0.95rem;
-  line-height: 1.55;
-  color: rgba(212, 232, 210, 0.66);
-  max-width: 70ch;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  color: rgba(212, 232, 210, 0.62);
+  max-width: 78ch;
   margin-bottom: 1.4rem;
-  letter-spacing: 0.005em;
+  letter-spacing: 0.01em;
 }
 
 /* ── Filter bar ── */
@@ -602,19 +603,20 @@ main {
 }
 .action-gene {
   font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 1.35rem;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0;
   color: var(--fg);
   line-height: 1.05;
 }
 .action-headline {
-  font-family: var(--font-prose);
-  font-style: italic;
-  font-size: 0.92rem;
-  line-height: 1.45;
-  color: rgba(212, 232, 210, 0.85);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: rgba(212, 232, 210, 0.8);
   font-weight: 400;
+  letter-spacing: 0.005em;
 }
 .action-tags {
   display: flex;
@@ -660,10 +662,11 @@ main {
 }
 .finding-title {
   font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-size: 1.3rem;
+  font-weight: 500;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--fg);
   transition: color 200ms ease;
 }
@@ -721,14 +724,14 @@ main {
   align-items: start;
 }
 .finding-prose {
-  font-family: var(--font-prose);
-  font-size: 0.95rem;
-  line-height: 1.55;
-  color: rgba(212, 232, 210, 0.85);
-  max-width: 62ch;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  line-height: 1.7;
+  color: rgba(212, 232, 210, 0.82);
+  max-width: 76ch;
+  letter-spacing: 0.005em;
 }
 .finding-prose p:first-child {
-  font-style: italic;
   color: rgba(212, 232, 210, 0.95);
 }
 .finding-prose p + p { margin-top: 0.6rem; }
@@ -813,12 +816,13 @@ main {
   font-size: 0.45rem;
 }
 .finding-actions ul li {
-  font-family: var(--font-prose);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: rgba(212, 232, 210, 0.85);
-  padding: 0.28rem 0 0.28rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: rgba(212, 232, 210, 0.82);
+  padding: 0.32rem 0 0.32rem 1rem;
   position: relative;
+  letter-spacing: 0.005em;
 }
 .finding-actions ul li::before {
   content: '';
@@ -894,19 +898,20 @@ main {
 
 .prs-card-trait {
   font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-size: 1.3rem;
+  font-weight: 500;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--fg);
   line-height: 1.05;
 }
 .prs-card-headline {
-  font-family: var(--font-prose);
-  font-style: italic;
-  font-size: 0.92rem;
-  line-height: 1.5;
-  color: rgba(212, 232, 210, 0.88);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: rgba(212, 232, 210, 0.82);
+  letter-spacing: 0.005em;
 }
 .prs-card-detail {
   font-family: var(--font-mono);
@@ -999,9 +1004,10 @@ main {
 
 .protocol-name {
   font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 1.25rem;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0;
   color: var(--fg);
   line-height: 1.1;
   padding-right: 3rem;
@@ -1064,14 +1070,14 @@ main {
 }
 
 .protocol-rationale {
-  font-family: var(--font-prose);
-  font-style: italic;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: rgba(212, 232, 210, 0.82);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.65;
+  color: rgba(212, 232, 210, 0.78);
   margin-top: 0.4rem;
   padding-top: 0.6rem;
   border-top: 1px solid var(--border);
+  letter-spacing: 0.005em;
 }
 
 /* ── PRS combined overview chart (all traits on one bell curve) ── */
@@ -1425,10 +1431,11 @@ main {
 }
 .crossref-headline {
   font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-size: 1.25rem;
+  font-weight: 500;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
   line-height: 1.15;
   color: var(--fg);
   padding-right: 1.2rem;
@@ -1454,13 +1461,13 @@ main {
   padding-top: 0.1rem;
 }
 .crossref-takeaway {
-  font-family: var(--font-prose);
-  font-style: italic;
-  font-size: 0.92rem;
-  line-height: 1.5;
-  color: rgba(212, 232, 210, 0.88);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: rgba(212, 232, 210, 0.85);
+  letter-spacing: 0.005em;
 }
-.crossref-takeaway strong { color: var(--accent); margin-right: 0.4em; font-style: normal; font-family: var(--font-display); font-size: 0.85em; }
+.crossref-takeaway strong { color: var(--accent); margin-right: 0.4em; }
 
 /* ── Lab values panel ── */
 .labs-table {
@@ -1561,14 +1568,15 @@ main {
 }
 .footer-eyebrow {
   font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
+  font-size: 1.4rem;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0;
   color: var(--fg);
 }
 .footer-eyebrow .accent {
   color: var(--rune);
+  font-style: normal;
   text-shadow: 0 0 12px var(--rune-glow);
 }
 .footer-sub {
