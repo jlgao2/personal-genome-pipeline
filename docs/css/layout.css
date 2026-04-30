@@ -297,24 +297,41 @@ main {
   font-family: var(--font-display);
   font-size: clamp(1.9rem, 3.8vw, 2.8rem);
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: -0.02em;
   line-height: 1;
   color: var(--fg);
-  display: block;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 0.65em;
   margin-bottom: 0.6rem;
   text-shadow:
     0 0 22px rgba(122, 240, 168, 0.12),
     0 0 50px rgba(122, 240, 168, 0.05);
 }
 .hero-title br { display: none; }
+.hero-name {
+  /* tasteful serif italic for the subject's name — narrative-record feel */
+  font-family: var(--font-prose);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.hero-meta {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 0.55em;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--fg-dim);
+}
 .hero-title .accent {
   color: var(--rune);
   font-weight: 400;
-  margin: 0 0.2em;
+  margin: 0 0.15em;
   text-shadow:
-    0 0 18px var(--rune-glow),
-    0 0 36px rgba(224, 170, 80, 0.25);
+    0 0 14px var(--rune-glow),
+    0 0 28px rgba(224, 170, 80, 0.2);
 }
 
 .hero-subtitle-row {
@@ -396,7 +413,7 @@ main {
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--accent);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -404,10 +421,10 @@ main {
 .section-kicker::before {
   content: '';
   display: block;
-  width: 18px;
+  width: 22px;
   height: 1px;
   background: var(--accent);
-  box-shadow: 0 0 6px var(--accent);
+  box-shadow: 0 0 6px var(--accent), 0 0 14px var(--accent-glow);
 }
 .section-title {
   font-family: var(--font-display);
@@ -418,18 +435,39 @@ main {
   line-height: 1;
   margin-bottom: 0.6rem;
   color: var(--fg);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55rem;
   text-shadow:
     0 0 16px rgba(122, 240, 168, 0.06),
     0 0 32px rgba(122, 240, 168, 0.03);
 }
+/* lightweight pulsing spore dot at end of section titles */
+.section-title::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent), 0 0 18px var(--accent-glow);
+  animation: spore-breathe 4s ease-in-out infinite;
+  align-self: center;
+  flex-shrink: 0;
+}
+@keyframes spore-breathe {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.7); }
+}
 .section-lead {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  line-height: 1.6;
-  color: rgba(232, 238, 245, 0.6);
-  max-width: 80ch;
-  margin-bottom: 1.25rem;
-  letter-spacing: 0.02em;
+  font-family: var(--font-prose);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(212, 232, 210, 0.66);
+  max-width: 70ch;
+  margin-bottom: 1.4rem;
+  letter-spacing: 0.005em;
 }
 
 /* ── Filter bar ── */
@@ -571,10 +609,11 @@ main {
   line-height: 1.05;
 }
 .action-headline {
-  font-family: var(--font-display);
-  font-size: 0.78rem;
+  font-family: var(--font-prose);
+  font-style: italic;
+  font-size: 0.92rem;
   line-height: 1.45;
-  color: rgba(232, 238, 245, 0.78);
+  color: rgba(212, 232, 210, 0.85);
   font-weight: 400;
 }
 .action-tags {
@@ -682,11 +721,15 @@ main {
   align-items: start;
 }
 .finding-prose {
-  font-family: var(--font-display);
-  font-size: 0.82rem;
-  line-height: 1.6;
-  color: rgba(232, 238, 245, 0.78);
-  max-width: 65ch;
+  font-family: var(--font-prose);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(212, 232, 210, 0.85);
+  max-width: 62ch;
+}
+.finding-prose p:first-child {
+  font-style: italic;
+  color: rgba(212, 232, 210, 0.95);
 }
 .finding-prose p + p { margin-top: 0.6rem; }
 .finding-prose strong { color: var(--fg); font-weight: 700; }
@@ -770,10 +813,10 @@ main {
   font-size: 0.45rem;
 }
 .finding-actions ul li {
-  font-family: var(--font-display);
-  font-size: 0.78rem;
+  font-family: var(--font-prose);
+  font-size: 0.9rem;
   line-height: 1.5;
-  color: rgba(232, 238, 245, 0.8);
+  color: rgba(212, 232, 210, 0.85);
   padding: 0.28rem 0 0.28rem 1rem;
   position: relative;
 }
@@ -859,10 +902,11 @@ main {
   line-height: 1.05;
 }
 .prs-card-headline {
-  font-family: var(--font-display);
-  font-size: 0.78rem;
+  font-family: var(--font-prose);
+  font-style: italic;
+  font-size: 0.92rem;
   line-height: 1.5;
-  color: rgba(232, 238, 245, 0.82);
+  color: rgba(212, 232, 210, 0.88);
 }
 .prs-card-detail {
   font-family: var(--font-mono);
@@ -1020,10 +1064,11 @@ main {
 }
 
 .protocol-rationale {
-  font-family: var(--font-display);
-  font-size: 0.78rem;
-  line-height: 1.55;
-  color: rgba(232, 238, 245, 0.78);
+  font-family: var(--font-prose);
+  font-style: italic;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(212, 232, 210, 0.82);
   margin-top: 0.4rem;
   padding-top: 0.6rem;
   border-top: 1px solid var(--border);
@@ -1409,12 +1454,13 @@ main {
   padding-top: 0.1rem;
 }
 .crossref-takeaway {
-  font-family: var(--font-display);
-  font-size: 0.78rem;
+  font-family: var(--font-prose);
+  font-style: italic;
+  font-size: 0.92rem;
   line-height: 1.5;
-  color: rgba(232, 238, 245, 0.85);
+  color: rgba(212, 232, 210, 0.88);
 }
-.crossref-takeaway strong { color: var(--accent); margin-right: 0.4em; }
+.crossref-takeaway strong { color: var(--accent); margin-right: 0.4em; font-style: normal; font-family: var(--font-display); font-size: 0.85em; }
 
 /* ── Lab values panel ── */
 .labs-table {
@@ -1493,29 +1539,17 @@ main {
   margin-top: 2rem;
   margin-left: var(--rail-w);
   background: var(--bg-card);
+  position: relative;
 }
-.footer-marquee-wrap {
-  overflow: hidden;
-  padding: 0.55rem 0;
-  border-bottom: 1px solid var(--border);
-}
-.marquee-track {
-  display: flex;
-  gap: 2.5rem;
-  width: max-content;
-  animation: marquee-scroll 32s linear infinite;
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: var(--fg-dim);
-  white-space: nowrap;
-}
-.marquee-dot { color: var(--accent); }
-@keyframes marquee-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+.site-footer::before {
+  /* faint glowing top-edge so the divider feels alive */
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+  opacity: 0.5;
 }
 .footer-body {
   padding: 1rem 1.5rem;
