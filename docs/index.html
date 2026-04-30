@@ -7,14 +7,14 @@
   <title>Genome // Report — DEMO</title>
 
   <style>
-    /* Demo banner — sticky strip at the very top */
+    /* Demo banner — sticky strip at the very top, dismiss-able */
     .demo-banner {
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 250;
       background: var(--warn);
       color: var(--bg);
-      padding: 0.4rem 1rem;
+      padding: 0.4rem 2.2rem 0.4rem 1rem;
       font-family: var(--font-mono);
       font-size: 0.62rem;
       letter-spacing: 0.18em;
@@ -22,6 +22,7 @@
       font-weight: 700;
       text-align: center;
       box-shadow: 0 2px 12px rgba(255, 58, 74, 0.3);
+      transition: transform 320ms var(--ease-out-expo), opacity 220ms ease;
     }
     .demo-banner a {
       color: var(--bg);
@@ -29,7 +30,70 @@
       margin-left: 0.5rem;
     }
     .demo-banner a:hover { color: var(--bg-card); }
-    body { padding-top: 28px; } /* push everything down so banner doesn't cover */
+    .demo-banner-close {
+      position: absolute;
+      top: 50%;
+      right: 0.85rem;
+      transform: translateY(-50%);
+      width: 18px; height: 18px;
+      background: transparent;
+      border: 1px solid var(--bg);
+      color: var(--bg);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 200ms ease;
+    }
+    .demo-banner-close:hover { background: var(--bg); color: var(--warn); }
+
+    /* Collapsed state: small persistent indicator chip in upper-right */
+    .demo-pill {
+      position: fixed;
+      top: 8px;
+      right: 12px;
+      z-index: 250;
+      background: var(--warn);
+      color: var(--bg);
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 0.25rem 0.55rem;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(255, 58, 74, 0.5);
+      animation: demo-pill-pulse 2.4s ease-in-out infinite;
+      border: 1px solid var(--warn);
+      transition: transform 200ms ease, box-shadow 200ms ease;
+      display: none; /* shown when banner is dismissed */
+    }
+    .demo-pill:hover { transform: scale(1.08); box-shadow: 0 0 18px rgba(255, 58, 74, 0.75); }
+    .demo-pill::before {
+      content: '◉';
+      margin-right: 0.4em;
+      font-size: 0.85em;
+    }
+    @keyframes demo-pill-pulse {
+      0%, 100% { box-shadow: 0 0 12px rgba(255, 58, 74, 0.5); }
+      50%      { box-shadow: 0 0 22px rgba(255, 58, 74, 0.85); }
+    }
+
+    /* Body padding only when banner visible */
+    body { padding-top: 28px; transition: padding-top 320ms var(--ease-out-expo); }
+
+    /* Dismissed state */
+    body.demo-dismissed { padding-top: 0; }
+    body.demo-dismissed .demo-banner {
+      transform: translateY(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.demo-dismissed .demo-pill { display: block; }
   </style>
 
   <link href="https://api.fontshare.com/v2/css?f[]=space-grotesk@300,400,500,700&f[]=space-mono@400,700&display=swap" rel="stylesheet" />
@@ -39,12 +103,34 @@
 </head>
 <body>
 
-  <!-- Demo banner -->
-  <div class="demo-banner">
+  <!-- Demo banner (dismiss-able) -->
+  <div class="demo-banner" id="demo-banner">
     DEMO · SYNTHETIC DATA · SUBJECT DEMO-0001 ·
     <a href="https://github.com/jlgao2/personal-genome-pipeline" target="_blank">→ Source code on GitHub</a>
     <a href="howto.html">→ How to run on your own data</a>
+    <button class="demo-banner-close" id="demo-banner-close" aria-label="Dismiss demo banner" title="Hide banner (click DEMO chip to bring back)">×</button>
   </div>
+
+  <!-- Persistent corner indicator (shown when banner dismissed) -->
+  <button class="demo-pill" id="demo-pill" aria-label="Show demo banner" title="This is synthetic demo data — click to show banner">DEMO</button>
+
+  <script>
+    (function () {
+      const KEY = 'demo_banner_dismissed';
+      const body = document.body;
+      const closeBtn = document.getElementById('demo-banner-close');
+      const pill     = document.getElementById('demo-pill');
+      if (localStorage.getItem(KEY) === '1') body.classList.add('demo-dismissed');
+      closeBtn?.addEventListener('click', () => {
+        body.classList.add('demo-dismissed');
+        localStorage.setItem(KEY, '1');
+      });
+      pill?.addEventListener('click', () => {
+        body.classList.remove('demo-dismissed');
+        localStorage.removeItem(KEY);
+      });
+    })();
+  </script>
 
   <!-- Left rail (sidebar nav) -->
   <aside class="rail">
