@@ -6,7 +6,7 @@
    ===================================================================== */
 
 export const META = {
-  subject:   'DEMO-0001',
+  subject:   'John Doe',
   generated: '2026-04-29',
   source:    'SYNTHETIC sample data — illustrative only',
   build:     'GRCh38',
@@ -19,7 +19,7 @@ export const STATS = [
   { label: 'PGx flags',          value: '4',       sub: 'Drugs to discuss with prescriber' },
   { label: 'ACMG SF v3.2 hits',  value: '2',       sub: 'Need clinical verification' },
   { label: 'Carrier (P/LP, 2★)', value: '1',       sub: 'For family planning' },
-  { label: 'Sex inferred',       value: 'Female',  sub: 'No chrY' },
+  { label: 'Sex inferred',       value: 'Male',    sub: 'chrY genotyped' },
   { label: 'APOE',               value: 'ε3/ε4',   sub: 'One ε4 allele present' },
 ];
 
@@ -95,8 +95,8 @@ export const PRS = [
     direction_label: 'Slightly elevated',
     raw: 1.23,
     coverage: '309 / 313 (99%)',
-    headline: 'Mild PRS elevation — discuss screening cadence given female sex.',
-    detail: 'Mavaddat 313-variant score. Tier-1 PRS, well-validated. Discuss earlier mammogram cadence (e.g., 35 instead of 40) with PCP.',
+    headline: 'Mild PRS elevation — relevant for any female first-degree relatives (sister, daughter).',
+    detail: 'Mavaddat 313-variant score. Tier-1 PRS, well-validated. Subject is male, so personally low-impact, but the same haplotype passes to female children at 50% probability. Worth flagging for family.',
   },
   {
     pgs: 'PGS000302',
