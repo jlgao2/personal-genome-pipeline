@@ -37,7 +37,12 @@ export const SECTIONS = [
   { id: 'limits',      label: 'Limits' },
 ];
 
-/* ── Protocol — supplementation + lifestyle interventions derived from findings ── */
+/* ── Protocol — supplementation + lifestyle interventions derived from findings ──
+   Each item links back to the specific genetic finding(s) driving the recommendation.
+   Tier A: strong evidence + direct genotype-level rationale.
+   Tier B: good evidence, moderate driver.
+   Tier C: emerging / mechanistic.
+   ===================================================================================== */
 export const PROTOCOL = {
   supplements: [
     {
@@ -96,9 +101,39 @@ export const PROTOCOL = {
       dose: '0 mg',
       tier: 'A',
       timing: '—',
-      driven_by: ['HFE C282Y/H63D compound heterozygous'],
-      rationale: 'Compound heterozygous → mild iron-overload risk. Read multivitamin labels carefully — many contain iron. Replace with iron-free formulas.',
-      product: 'Iron-free multivitamins: Pure Encapsulations Men\'s Pure Pack · Thorne Basic Nutrients (no iron) · $0 saved',
+      driven_by: ['HFE C282Y/H63D compound heterozygous', 'Ferritin 280 ng/mL elevated'],
+      rationale: 'Compound heterozygous → mild iron-overload risk. Read multivitamin labels carefully — many contain iron. Replace with iron-free formulas. Annual ferritin + transferrin saturation (already trending up).',
+      product: 'Iron-free multivitamins: Pure Encapsulations Women\'s Nutrients · Thorne Basic Nutrients (no iron) · $0 saved',
+    },
+    {
+      id: 'choline-citicoline',
+      name: 'Citicoline (CDP-Choline)',
+      dose: '250–500 mg/day',
+      tier: 'C',
+      timing: 'morning',
+      driven_by: ['APOE ε3/ε4 — phosphatidylcholine support'],
+      rationale: 'Brain phosphatidylcholine is depleted in early AD; ε4 carriers have accelerated membrane lipid turnover. Citicoline is the bioactive form. Tier-C evidence — emerging but mechanistically reasonable, well-tolerated.',
+      product: 'Jarrow Formulas Citicoline · Nutricost CDP-Choline · ~$15-25/mo',
+    },
+    {
+      id: 'lions-mane',
+      name: "Lion's Mane Mushroom",
+      dose: '500–1000 mg extract',
+      tier: 'C',
+      timing: 'morning, with food',
+      driven_by: ['APOE ε3/ε4 cognitive support'],
+      rationale: 'Hericenones + erinacines support nerve growth factor (NGF) synthesis. Small RCT shows mild cognitive support in mild cognitive impairment. Tier-C, optional. Skip if any mushroom allergy.',
+      product: 'Real Mushrooms Lion\'s Mane · Host Defense · ~$25-40/mo',
+    },
+    {
+      id: 'creatine',
+      name: 'Creatine Monohydrate',
+      dose: '5 g/day',
+      tier: 'B',
+      timing: 'with any meal',
+      driven_by: ['Cognitive support in ε4 carriers', 'Strength training adjunct', 'Female-specific muscle preservation'],
+      rationale: 'Recent RCTs (2023–2025) show modest cognitive benefit at 10g doses in older adults, especially ε4 carriers and during sleep deprivation. Female-specific data: better strength and bone density preservation than placebo. Cheap and safe.',
+      product: 'Bulk Supplements Creatine · Optimum Nutrition Micronized · ~$10/mo (1 kg lasts ~6 months)',
     },
   ],
   lifestyle: [
@@ -189,6 +224,46 @@ export const PROTOCOL = {
       tier: 'B',
       driven_by: ['APOE ε4 + CAD PRS'],
       rationale: 'Coronary artery calcium scan is the single best risk-stratifier when family history + genetics both point at CAD. Pull the typical age-50 screening forward to ~40 given the combined risk picture.',
+    },
+    {
+      id: 'mammogram-cadence',
+      name: 'Earlier Mammogram Cadence',
+      cadence: 'Discuss starting age 35 (vs typical 40)',
+      tier: 'A',
+      driven_by: ['Breast cancer PRS slightly elevated', 'Family history if applicable'],
+      rationale: 'Mavaddat 313-variant PRS at the 82nd percentile + any first-degree family history justifies earlier screening start. Discuss with PCP — they may also recommend Tyrer-Cuzick risk model assessment.',
+    },
+    {
+      id: 'partner-screening',
+      name: 'Expanded Carrier Screening (if family planning)',
+      cadence: 'Once per partnership',
+      tier: 'A',
+      driven_by: ['CFTR F508del carrier'],
+      rationale: 'You carry one copy of the most common cystic fibrosis variant. Asymptomatic in carriers; only matters if a future partner is also a CFTR carrier. Standard expanded panel (~$300, Natera/Sema4/Myriad) screens ~280 recessive diseases at once.',
+    },
+    {
+      id: 'sauna',
+      name: 'Sauna Use',
+      cadence: '4–7×/week, 15–20 min at 80°C+',
+      tier: 'B',
+      driven_by: ['CAD PRS', 'APOE ε4 cardiovascular protection', 'General longevity'],
+      rationale: 'Finnish cohort data: 4-7×/week sauna users have ~50% lower CAD mortality vs <1×/week, independent of other risk factors. Heat-shock protein response also linked to neuroprotection. Gym membership with sauna access is high-leverage.',
+    },
+    {
+      id: 'hsCRP-monitoring',
+      name: 'hsCRP + ApoB + Lp(a) Lab Panel',
+      cadence: 'Annual',
+      tier: 'A',
+      driven_by: ['CAD PRS elevated', 'APOE ε4'],
+      rationale: 'Standard lipid panel misses ~30% of CV risk. ApoB measures total atherogenic particles; Lp(a) is a once-in-a-lifetime test (genetically determined); hsCRP captures inflammatory tone. Targets: ApoB <80 mg/dL, hsCRP <1 mg/L.',
+    },
+    {
+      id: 'mediterranean-supplements',
+      name: 'Olive Oil + Berries + Nuts (Daily)',
+      cadence: 'Daily food intake',
+      tier: 'A',
+      driven_by: ['APOE ε4', 'CAD PRS', 'LDL PRS'],
+      rationale: '2-3 tbsp extra-virgin olive oil/day for polyphenols (oleocanthal). 1 cup berries daily for anthocyanins. Handful of nuts (almonds, walnuts) for monounsaturated fats and fiber. Specifically validated in PREDIMED trial for CV mortality reduction in high-risk Mediterranean diet adherents.',
     },
   ],
 };
