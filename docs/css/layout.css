@@ -943,6 +943,71 @@ main {
   border-top: 1px solid var(--border);
 }
 
+/* ── PRS distribution graph (z-score visualization) ── */
+.prs-graph-wrap {
+  margin: 0.4rem 0 0.5rem;
+  padding: 0.5rem 0.4rem 0.4rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.prs-graph {
+  width: 100%;
+  height: 50px;
+  display: block;
+}
+.prs-graph--unavailable {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(232, 238, 245, 0.04) 4px,
+    rgba(232, 238, 245, 0.04) 8px
+  );
+}
+.prs-graph-na-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+}
+.prs-graph-meta {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.15rem 0.7rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.45rem;
+  letter-spacing: 0.12em;
+  color: var(--fg-mute);
+}
+.prs-graph-tick { display: inline-block; }
+.prs-graph-readout {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+}
+.prs-graph-z {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+}
+.prs-graph-pct {
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
 /* ── Cross-reference (clinical) ── */
 .crossref-grid {
   display: grid;

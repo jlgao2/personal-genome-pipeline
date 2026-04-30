@@ -125,6 +125,84 @@ function renderFindingBlock(f, idx) {
   `;
 }
 
+/* ── Render z-score distribution graph for a PRS ── */
+function prsGraphSvg(z, percentile) {
+  if (z == null) {
+    return `
+      <div class="prs-graph prs-graph--unavailable">
+        <span class="prs-graph-na-label">Coverage too low</span>
+      </div>
+    `;
+  }
+  // Map z (-3 to +3) to x (20 to 260) on a 280-wide viewBox
+  const xZero = 140;
+  const xPerSigma = 40;
+  const x = Math.max(20, Math.min(260, xZero + z * xPerSigma));
+
+  // Color tier by direction
+  let dotColor = 'var(--accent)';
+  let dotGlow  = 'rgba(94, 226, 255, 0.6)';
+  if (z >= 1.5) {
+    dotColor = 'var(--warn)';
+    dotGlow  = 'rgba(255, 58, 74, 0.6)';
+  } else if (z <= -1.5) {
+    dotColor = 'var(--tier-c)';
+    dotGlow  = 'rgba(125, 240, 168, 0.6)';
+  } else if (Math.abs(z) < 0.4) {
+    dotColor = 'var(--fg-dim)';
+    dotGlow  = 'rgba(232, 238, 245, 0.3)';
+  }
+
+  const zLabel = `z = ${z >= 0 ? '+' : ''}${z.toFixed(1)}σ`;
+  const pctLabel = percentile != null ? `${percentile}${pctSuffix(percentile)}` : '';
+
+  return `
+    <div class="prs-graph-wrap">
+      <svg class="prs-graph" viewBox="0 0 280 50" preserveAspectRatio="none">
+        <!-- Bell curve fill -->
+        <path d="M20,42 C50,42 80,40 100,33 C115,26 130,12 140,8 C150,12 165,26 180,33 C200,40 230,42 260,42 Z"
+              fill="var(--accent-soft)" stroke="var(--accent-deep)" stroke-width="0.8" opacity="0.9" />
+        <!-- σ axis line -->
+        <line x1="20" y1="42" x2="260" y2="42" stroke="var(--border-strong)" stroke-width="0.5" />
+        <!-- σ ticks -->
+        <line x1="60"  y1="42" x2="60"  y2="46" stroke="var(--fg-dim)" stroke-width="0.5" />
+        <line x1="100" y1="42" x2="100" y2="46" stroke="var(--fg-dim)" stroke-width="0.5" />
+        <line x1="140" y1="42" x2="140" y2="48" stroke="var(--fg-dim)" stroke-width="0.7" />
+        <line x1="180" y1="42" x2="180" y2="46" stroke="var(--fg-dim)" stroke-width="0.5" />
+        <line x1="220" y1="42" x2="220" y2="46" stroke="var(--fg-dim)" stroke-width="0.5" />
+        <!-- User marker -->
+        <line x1="${x}" y1="6" x2="${x}" y2="42" stroke="${dotColor}" stroke-width="1.2"
+              style="filter: drop-shadow(0 0 4px ${dotGlow})" />
+        <circle cx="${x}" cy="6" r="3.5" fill="${dotColor}" stroke="var(--bg)" stroke-width="1"
+              style="filter: drop-shadow(0 0 6px ${dotGlow})" />
+      </svg>
+      <div class="prs-graph-meta">
+        <span class="prs-graph-tick">−3σ</span>
+        <span class="prs-graph-tick">−2</span>
+        <span class="prs-graph-tick">−1</span>
+        <span class="prs-graph-tick">0</span>
+        <span class="prs-graph-tick">+1</span>
+        <span class="prs-graph-tick">+2</span>
+        <span class="prs-graph-tick">+3σ</span>
+      </div>
+      <div class="prs-graph-readout">
+        <span class="prs-graph-z" style="color: ${dotColor}">${zLabel}</span>
+        ${pctLabel ? `<span class="prs-graph-pct" style="color: ${dotColor}">~${pctLabel} percentile</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function pctSuffix(n) {
+  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+  switch (n % 10) {
+    case 1: return 'st';
+    case 2: return 'nd';
+    case 3: return 'rd';
+    default: return 'th';
+  }
+}
+
 /* ── Render PRS cards ── */
 function renderPRS() {
   const root = document.getElementById('prs-grid');
@@ -133,6 +211,7 @@ function renderPRS() {
     <article class="prs-card">
       <span class="prs-card-direction" data-dir="${p.direction}">${p.direction_label}</span>
       <h3 class="prs-card-trait">${p.trait}</h3>
+      ${prsGraphSvg(p.z, p.percentile)}
       <p class="prs-card-headline">${p.headline}</p>
       <p class="prs-card-detail">${p.detail}</p>
       <div class="prs-card-meta">
