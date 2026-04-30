@@ -13,39 +13,41 @@ details summary::-webkit-details-marker { display: none; }
 
 /* ── Custom Properties — Apothecary's Bog: deep-forest-swamp + biotech alchemy ── */
 :root {
-  /* Peat-water dark green-black — moonless swamp ground */
-  --bg:        #0a1410;
-  --bg-tint:   #0a1410;
-  --bg-card:   #11201a;          /* damp earth, slight elevation */
-  --bg-grid:   rgba(120, 220, 160, 0.025);
+  /* Drowned grove — almost-black water, deeper than peat */
+  --bg:        #03080a;
+  --bg-tint:   #03080a;
+  --bg-card:   #08110d;          /* barely lifted, like wet bark in shadow */
+  --bg-grid:   rgba(120, 220, 160, 0.018);
 
-  --fg:        #e8f2e6;          /* moonlight on lichen */
-  --fg-dim:    rgba(232, 242, 230, 0.55);
-  --fg-mute:   rgba(232, 242, 230, 0.32);
+  --fg:        #d4e8d2;          /* dim moonlight on lichen */
+  --fg-dim:    rgba(212, 232, 210, 0.45);
+  --fg-mute:   rgba(212, 232, 210, 0.24);
 
-  /* Witchlight — phosphorescent fungi green */
-  --accent:        #6fe6a3;
-  --accent-soft:   rgba(111, 230, 163, 0.12);
-  --accent-bright: #95f0bd;
+  /* Witchlight — bioluminescent spore green, brighter to compensate for darker bg */
+  --accent:        #7af0a8;
+  --accent-soft:   rgba(122, 240, 168, 0.10);
+  --accent-bright: #a8f8c5;
   --accent-deep:   #2fa168;
+  --accent-glow:   rgba(122, 240, 168, 0.45);
 
-  /* Goblin amber — alchemist's brew, rune-stone glow */
-  --rune:        #d6a14a;
-  --rune-soft:   rgba(214, 161, 74, 0.15);
+  /* Goblin amber — alchemist's brew, deep ember in dark glass */
+  --rune:        #e0aa50;
+  --rune-soft:   rgba(224, 170, 80, 0.12);
   --rune-deep:   #8c6420;
+  --rune-glow:   rgba(224, 170, 80, 0.4);
 
   /* Tier indicators */
-  --tier-a:    #6fe6a3;          /* witchlight — primary findings */
-  --tier-b:    #d6a14a;          /* goblin amber — moderate */
-  --tier-c:    #82d8a3;          /* paler moss — reassuring */
+  --tier-a:    #7af0a8;          /* spore-glow */
+  --tier-b:    #e0aa50;           /* ember */
+  --tier-c:    #92e0b3;           /* pale moss */
 
-  /* Toadstool red — for dangerous brews */
-  --warn:      #e85a4a;
-  --warn-soft: rgba(232, 90, 74, 0.1);
+  /* Toadstool red */
+  --warn:      #e8584a;
+  --warn-soft: rgba(232, 88, 74, 0.1);
 
-  --border:        rgba(180, 200, 170, 0.08);
-  --border-strong: rgba(180, 200, 170, 0.18);
-  --border-accent: rgba(111, 230, 163, 0.24);
+  --border:        rgba(160, 200, 170, 0.06);
+  --border-strong: rgba(160, 200, 170, 0.14);
+  --border-accent: rgba(122, 240, 168, 0.22);
 
   --font-display: 'Cormorant Garamond', 'Iowan Old Style', 'Georgia', serif;
   --font-mono:    'Space Mono', 'JetBrains Mono', 'Courier New', monospace;
@@ -64,15 +66,53 @@ body {
   color: var(--fg);
   overflow-x: hidden;
 
-  /* Layered swamp ambience: organic radial fog patches over a faint terminal grid */
+  /* Drifting bioluminescent fog: large soft spore-glows + ember-pools, faint grid below */
   background-image:
-    radial-gradient(ellipse 1200px 600px at 20% 10%,  rgba(111, 230, 163, 0.05), transparent 60%),
-    radial-gradient(ellipse 800px 400px  at 85% 80%,  rgba(214, 161, 74,  0.04), transparent 60%),
-    radial-gradient(ellipse 600px 300px  at 50% 50%,  rgba(47, 161, 104,  0.03), transparent 70%),
+    radial-gradient(ellipse 1400px 700px at 15% 5%,   rgba(122, 240, 168, 0.07), transparent 55%),
+    radial-gradient(ellipse 900px 500px  at 88% 78%,  rgba(224, 170, 80,  0.05), transparent 55%),
+    radial-gradient(ellipse 700px 400px  at 42% 55%,  rgba(47, 161, 104,  0.04), transparent 65%),
+    radial-gradient(ellipse 500px 300px  at 70% 25%,  rgba(122, 240, 168, 0.025), transparent 70%),
     linear-gradient(var(--bg-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
-  background-size: auto, auto, auto, 64px 64px, 64px 64px;
-  background-attachment: fixed, fixed, fixed, scroll, scroll;
+  background-size: auto, auto, auto, auto, 96px 96px, 96px 96px;
+  background-attachment: fixed, fixed, fixed, fixed, scroll, scroll;
+  position: relative;
+}
+
+/* Drifting spore haze — a slow-moving veil that adds gentle motion */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -10vh -10vw;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle 4px at 12% 22%, var(--accent-soft), transparent 70%),
+    radial-gradient(circle 3px at 88% 18%, var(--rune-soft),   transparent 70%),
+    radial-gradient(circle 5px at 32% 78%, var(--accent-soft), transparent 70%),
+    radial-gradient(circle 3px at 78% 62%, var(--accent-soft), transparent 70%),
+    radial-gradient(circle 2px at 58% 38%, var(--rune-soft),   transparent 70%),
+    radial-gradient(circle 4px at 22% 52%, var(--accent-soft), transparent 70%),
+    radial-gradient(circle 3px at 64% 88%, var(--accent-soft), transparent 70%);
+  animation: spore-drift 60s linear infinite;
+  opacity: 0.6;
+}
+@keyframes spore-drift {
+  from { transform: translate3d(0, 0, 0) rotate(0deg); }
+  to   { transform: translate3d(2vw, -3vh, 0) rotate(0.5deg); }
+}
+
+/* Soft vignette darkening edges — feel of being deep in a grove */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 130% 100% at 50% 50%,
+    transparent 30%,
+    rgba(0, 0, 0, 0.35) 90%,
+    rgba(0, 0, 0, 0.6) 100%);
 }
 
 /* ── Typography — display = grimoire serif, body = clean sans, mono = lab labels ── */
