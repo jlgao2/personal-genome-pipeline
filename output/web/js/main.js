@@ -3,6 +3,8 @@
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
 } from './data.js';
+import { VITALS } from './data-vitals.js';
+import { VITAL_TARGETS } from './vitals-targets.js';
 
 /* ── Render hero stats ── */
 function renderStats() {
@@ -142,6 +144,82 @@ function renderPRS() {
       </div>
     </article>
   `).join('');
+}
+
+/* ── Render Vitals (HealthKit time-series cards) ── */
+const VITAL_DISPLAY = {
+  heart_rate_resting: { label: "Resting HR",    unit: "bpm",        decimals: 0 },
+  vo2max:             { label: "VO₂ Max",  unit: "mL/min·kg", decimals: 1 },
+  weight:             { label: "Weight",        unit: "lb",         decimals: 1 },
+  bp_systolic:        { label: "BP Systolic",   unit: "mmHg",       decimals: 0 },
+  bp_diastolic:       { label: "BP Diastolic",  unit: "mmHg",       decimals: 0 },
+  sleep_minutes:      { label: "Sleep",         unit: "min/night",  decimals: 0 },
+  exercise_minutes:   { label: "Exercise",      unit: "min/day",    decimals: 0 },
+};
+
+function vitalSpark(series, target) {
+  if (!series || series.length < 2) return "";
+  const W = 320, H = 56, PAD = 4;
+  const xs = series.map((_, i) => i);
+  const ys = series.map(([, v]) => v);
+  const minY = Math.min(...ys, target ?? Infinity);
+  const maxY = Math.max(...ys, target ?? -Infinity);
+  const rangeY = (maxY - minY) || 1;
+  const xToPx = i => PAD + (i / (xs.length - 1)) * (W - 2 * PAD);
+  const yToPx = v => H - PAD - ((v - minY) / rangeY) * (H - 2 * PAD);
+
+  const pathD = series
+    .map(([, v], i) => `${i === 0 ? "M" : "L"} ${xToPx(i).toFixed(1)} ${yToPx(v).toFixed(1)}`)
+    .join(" ");
+
+  const targetLine = target != null
+    ? `<line class="vital-spark-target" x1="${PAD}" y1="${yToPx(target).toFixed(1)}"
+                                         x2="${W - PAD}" y2="${yToPx(target).toFixed(1)}"/>
+       <text class="vital-spark-target-label" x="${W - PAD}" y="${(yToPx(target) - 2).toFixed(1)}"
+             text-anchor="end">target ${target}</text>`
+    : "";
+
+  return `
+    <svg class="vital-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      ${targetLine}
+      <path class="vital-spark-line" d="${pathD}"/>
+    </svg>
+  `;
+}
+
+function renderVitals() {
+  const root = document.getElementById("vitals-grid");
+  if (!root) return;
+  if (!VITALS || Object.keys(VITALS).length === 0) {
+    root.innerHTML =
+      `<p style="padding:1rem; font-family: var(--font-mono); font-size: 0.65rem;
+                 color: var(--fg-dim);">
+         No HealthKit data yet — drop your export.zip in <code>data/raw/healthkit/</code>
+         and run <code>refresh.sh</code>.
+       </p>`;
+    return;
+  }
+  const cards = Object.entries(VITALS).map(([key, data]) => {
+    const display = VITAL_DISPLAY[key] || { label: key, unit: "", decimals: 1 };
+    const target = VITAL_TARGETS[key] || null;
+    const fixed = data.latest != null ? data.latest.toFixed(display.decimals) : "—";
+    const trendArrow = { up: "↑", down: "↓", flat: "→" }[data.trend] || "";
+    return `
+      <article class="vital-card">
+        <div class="vital-card-name">${display.label}</div>
+        <div>
+          <span class="vital-card-value">${fixed}</span>
+          <span class="vital-card-unit">${display.unit}</span>
+        </div>
+        ${vitalSpark(data.series, target ? target.value : null)}
+        <div class="vital-card-trend" data-trend="${data.trend || 'flat'}">
+          ${trendArrow} ${data.trend || "flat"} · last 30d
+        </div>
+        ${target ? `<div class="vital-card-target">Target: ${target.label}</div>` : ""}
+      </article>
+    `;
+  }).join("");
+  root.innerHTML = cards;
 }
 
 /* ── Render cross-reference cards ── */
@@ -310,6 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderActions();
   renderFindingsBySection();
   renderPRS();
+  renderVitals();
   renderCrossRef();
   renderLabs();
   renderAgenda();
