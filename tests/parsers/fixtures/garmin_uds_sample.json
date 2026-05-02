@@ -1,0 +1,30 @@
+[
+  {
+    "calendarDate": "2026-01-22",
+    "wellnessStartTimeGmt": "2026-01-21T13:00:00.0",
+    "wellnessEndTimeGmt":   "2026-01-22T13:00:00.0",
+    "minHeartRate": 50,
+    "maxHeartRate": 142,
+    "minAvgHeartRate": 51,
+    "maxAvgHeartRate": 138,
+    "moderateIntensityMinutes": 22,
+    "vigorousIntensityMinutes": 18,
+    "totalKilocalories": 2680,
+    "activeKilocalories": 540,
+    "wellnessActiveKilocalories": 540
+  },
+  {
+    "calendarDate": "2026-01-23",
+    "wellnessStartTimeGmt": "2026-01-22T13:00:00.0",
+    "wellnessEndTimeGmt":   "2026-01-23T13:00:00.0",
+    "minHeartRate": 49,
+    "maxHeartRate": 130,
+    "minAvgHeartRate": 50,
+    "maxAvgHeartRate": 128,
+    "moderateIntensityMinutes": 0,
+    "vigorousIntensityMinutes": 30,
+    "totalKilocalories": 2400,
+    "activeKilocalories": 380,
+    "wellnessActiveKilocalories": 380
+  }
+]
