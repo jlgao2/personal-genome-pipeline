@@ -3,7 +3,7 @@
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
 } from './data.js';
-import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE } from './data-vitals.js';
+import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS } from './data-vitals.js';
 import { VITAL_TARGETS } from './vitals-targets.js';
 
 /* ── Render hero stats ── */
@@ -351,11 +351,17 @@ function renderMedAlerts() {
     }
   }
 
+  // Also fold in FHIR-detected medication alerts (from MyChart) — these trump
+  // the self-reported list because they're confirmed prescriptions.
+  for (const a of (MED_ALERTS || [])) {
+    flagged.push({ med: a.medication, reason: a.reason || a.drug_class || '', severity: 'high', source: 'mychart' });
+  }
+
   if (flagged.length === 0) {
     root.innerHTML = `
       <article class="med-alert">
         <div class="med-alert-clear">No alerts</div>
-        <div class="med-alert-rationale">Your current medications (${current.length ? current.join(', ') : 'none on file'}) don't trigger any tendon-vulnerability flags.</div>
+        <div class="med-alert-rationale">Your current medications (${current.length ? current.join(', ') : 'none on file'}) don't trigger any tendon-vulnerability flags. MyChart medications also clean.</div>
       </article>
       ${alerts.length ? `
         <article class="med-alert" data-severity="medium">
@@ -371,6 +377,7 @@ function renderMedAlerts() {
       <div>
         <span class="med-alert-name">${f.med}</span>
         <span class="med-alert-flag">⚠ flag</span>
+        ${f.source === 'mychart' ? '<span class="med-alert-flag" style="color:var(--accent)">via MyChart</span>' : ''}
       </div>
       <div class="med-alert-rationale">${f.reason}</div>
     </article>
