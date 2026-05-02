@@ -59,6 +59,12 @@ def iter_samples(xml_path: Path) -> Iterator[dict]:
             elem.clear()
             continue
 
+        end_date = elem.get("endDate")
+        try:
+            ts_end = _parse_apple_date(end_date) if end_date else ts
+        except ValueError:
+            ts_end = ts
+
         raw_value = elem.get("value")
         unit = elem.get("unit")
         meta: dict = {
@@ -78,6 +84,7 @@ def iter_samples(xml_path: Path) -> Iterator[dict]:
 
         yield {
             "ts":     ts,
+            "ts_end": ts_end,
             "source": "healthkit",
             "type":   normalized,
             "value":  value,
@@ -115,6 +122,7 @@ def parse_to_parquet(xml_path: Path, outdir: Path) -> int:
     for partition, samples in by_partition.items():
         table = pa.Table.from_pylist(samples, schema=pa.schema([
             ("ts",     pa.string()),
+            ("ts_end", pa.string()),
             ("source", pa.string()),
             ("type",   pa.string()),
             ("value",  pa.float64()),

@@ -34,3 +34,11 @@ def test_iter_samples_returns_iso_timestamps():
     # Should be ISO-8601 string with timezone offset
     assert s["ts"].startswith("2026-")
     assert "+" in s["ts"] or "-" in s["ts"][10:]
+
+
+def test_iter_samples_includes_ts_end():
+    samples = list(iter_samples(FIXTURE))
+    sleep = next(s for s in samples if s["type"] == "sleep_stage")
+    # Sleep record spans 23:30 → 06:45 next day
+    assert sleep["ts_end"].startswith("2026-04-22")
+    assert sleep["ts_end"] != sleep["ts"]
