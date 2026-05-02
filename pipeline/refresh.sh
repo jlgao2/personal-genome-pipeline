@@ -45,6 +45,20 @@ if [[ -f "$HK_ZIP" ]]; then
     fi
 fi
 
+# ── iOS sample drops (samples_YYYY-MM-DD.json from the companion app) ──
+IOS_DROPS="$DATA_ROOT/raw/ios"
+if [[ -d "$IOS_DROPS" ]] && ls "$IOS_DROPS"/samples_*.json >/dev/null 2>&1; then
+    NEWEST_DROP=$(ls -t "$IOS_DROPS"/samples_*.json 2>/dev/null | head -1)
+    if [[ ! -f "$LOG" || "$NEWEST_DROP" -nt "$LOG" ]]; then
+        echo "Ingesting iOS sample drops..."
+        python3 -m pipeline.parsers.ios_samples \
+            --drops "$IOS_DROPS" \
+            --outdir "$PARQUET_ROOT/samples"
+    else
+        echo "iOS samples up to date."
+    fi
+fi
+
 # ── Garmin ──
 GR_ZIP="$DATA_ROOT/raw/garmin/garmin_export.zip"
 if [[ -f "$GR_ZIP" ]]; then
