@@ -27,6 +27,25 @@ if [[ -f "$HK_ZIP" ]]; then
     fi
 fi
 
+# ── Genome → findings.parquet ──
+if [[ -d output/raw_findings ]]; then
+    if [[ ! -f "$LOG" || -n "$(find output/raw_findings -newer "$LOG" 2>/dev/null)" ]]; then
+        echo "Parsing genome TSVs → findings.parquet..."
+        python3 -m pipeline.parsers.genome \
+            --raw output/raw_findings \
+            --outdir data/parquet/findings
+    else
+        echo "Genome findings up to date."
+    fi
+fi
+
+# ── Cross-refs YAML → cross_refs.parquet ──
+if [[ -f output/cross_refs.yaml ]]; then
+    python3 -m pipeline.parsers.cross_refs \
+        --yaml output/cross_refs.yaml \
+        --out  data/parquet/cross_refs/cross_refs.parquet
+fi
+
 # ── Build vitals JS ──
 echo "Building data-vitals.js..."
 python3 -m pipeline.build_vitals \
