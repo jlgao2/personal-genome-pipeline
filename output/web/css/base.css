@@ -42,6 +42,10 @@ details summary::-webkit-details-marker { display: none; }
   --border-strong: rgba(232, 238, 245, 0.20);
   --border-accent: rgba(94, 226, 255, 0.25);
 
+  /* Vitals overlay */
+  --rune:        #7df0a8;        /* genotype-target green */
+  --accent-glow: rgba(94, 226, 255, 0.35);
+
   --font-display: 'Space Grotesk', 'Helvetica Neue', sans-serif;
   --font-mono: 'Space Mono', 'JetBrains Mono', 'Courier New', monospace;
   --font-body: 'Space Grotesk', 'Helvetica Neue', sans-serif;
