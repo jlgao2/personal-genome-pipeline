@@ -25,6 +25,7 @@
       <span class="rail-section-label">Findings</span>
       <ul class="nav-sections">
         <li><button class="nav-btn" data-section="health-profile" data-num="00">Profile</button></li>
+        <li><button class="nav-btn" data-section="stack"        data-num="00b">Stack</button></li>
         <li><button class="nav-btn" data-section="action-loop" data-num="00a">Action Loop</button></li>
         <li><button class="nav-btn" data-section="actionable" data-num="01">Actionable</button></li>
         <li><button class="nav-btn" data-section="drugs"      data-num="02">Drugs (PGx)</button></li>
@@ -85,6 +86,17 @@
     <p class="section-kicker">Today · context</p>
     <h2 class="section-title">Health profile</h2>
     <div class="profile-grid" id="profile-grid"></div>
+  </section>
+
+  <!-- Supplement Stack — timing-grouped today -->
+  <section class="section" id="stack">
+    <p class="section-kicker">Today · supplement protocol</p>
+    <h2 class="section-title">Stack</h2>
+    <p class="section-lead">
+      Evidence-graded daily protocol. Each entry links to the genome finding
+      or context that drives it. Strong evidence = bold border.
+    </p>
+    <div class="stack-grid" id="stack-grid"></div>
   </section>
 
   <!-- Action Loop — genome × measured signal × today's gap -->

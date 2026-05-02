@@ -243,6 +243,59 @@ function renderHealthProfile() {
   root.innerHTML = cards.join('');
 }
 
+/* ── Render Supplement Stack ── */
+const TIMING_ORDER = ['morning', '30-60 min pre-workout', 'with lunch', 'afternoon', 'evening', 'before bed'];
+const TIMING_LABELS = {
+  'morning': 'Morning',
+  '30-60 min pre-workout': 'Pre-workout',
+  'with lunch': 'Lunch',
+  'afternoon': 'Afternoon',
+  'evening': 'Evening',
+  'before bed': 'Before bed',
+};
+
+function renderStack() {
+  const root = document.getElementById('stack-grid');
+  if (!root) return;
+  const stack = (HEALTH_PROFILE && HEALTH_PROFILE.supplement_stack) || [];
+  if (stack.length === 0) {
+    root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No supplement protocol defined yet.</p>';
+    return;
+  }
+  // Group by timing
+  const byTiming = {};
+  for (const item of stack) {
+    const t = item.timing || 'unscheduled';
+    (byTiming[t] = byTiming[t] || []).push(item);
+  }
+  const sortedTimings = Object.keys(byTiming).sort((a, b) => {
+    const ai = TIMING_ORDER.indexOf(a);
+    const bi = TIMING_ORDER.indexOf(b);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+  root.innerHTML = sortedTimings.map(t => {
+    const items = byTiming[t];
+    const label = TIMING_LABELS[t] || t;
+    const food = items.some(i => i.with_food) ? 'with food' : 'fasted';
+    return `
+      <article class="stack-group">
+        <div class="stack-group-header">
+          <span class="stack-time-label">${label}</span>
+          <span class="stack-time-meta">${food}</span>
+        </div>
+        ${items.map(i => `
+          <div class="stack-item">
+            <div class="stack-item-name" data-evidence="${i.evidence || 'moderate'}">${i.name}</div>
+            <div class="stack-item-dose">${i.dose || ''}</div>
+            <div class="stack-item-rationale">${i.rationale || ''}</div>
+            ${(i.links && i.links.length) ? `<div class="stack-item-links">${i.links.map(l => `<span class="stack-item-link">→ ${l}</span>`).join('')}</div>` : ''}
+          </div>
+        `).join('')}
+      </article>
+    `;
+  }).join('');
+}
+
 /* ── Render Action Loop (genome × measured × today) ── */
 const SAMPLE_TYPE_LABELS = {
   heart_rate_resting: 'Resting HR',
@@ -613,6 +666,7 @@ function wirePrint() {
 document.addEventListener('DOMContentLoaded', () => {
   renderStats();
   renderHealthProfile();
+  renderStack();
   renderActionLoop();
   renderActions();
   renderFindingsBySection();
