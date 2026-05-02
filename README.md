@@ -1,5 +1,7 @@
 # Personal Genome Pipeline
 
+[![CI](https://github.com/jlgao2/personal-genome-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/jlgao2/personal-genome-pipeline/actions/workflows/ci.yml)
+
 Turn a 23andMe v5 raw genotype download into an interactive dashboard with:
 - **Pharmacogenomics** (PharmCAT 3.2 — drug dosing flags for ~16 genes)
 - **Polygenic risk scores** (10 traits via PGS Catalog)
