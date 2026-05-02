@@ -1103,3 +1103,66 @@ main {
   padding-top: 0.55rem;
   margin-top: 0.3rem;
 }
+
+/* ── Workouts list ── */
+.workouts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.workout-card {
+  background: var(--bg-card);
+  padding: 0.85rem 1.1rem;
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 1rem;
+  align-items: center;
+}
+.workout-date {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.workout-label {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--fg);
+}
+.workout-sport {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  margin-left: 0.4rem;
+}
+.workout-stats {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  text-align: right;
+}
+.hr-zones {
+  display: flex;
+  height: 6px;
+  width: 100%;
+  margin-top: 0.4rem;
+  background: var(--bg-tint);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.hr-zone { height: 100%; }
+.hr-zone[data-z="0"] { background: rgba(232, 238, 245, 0.2); }
+.hr-zone[data-z="1"] { background: var(--tier-c); }
+.hr-zone[data-z="2"] { background: var(--accent-deep); }
+.hr-zone[data-z="3"] { background: var(--accent); }
+.hr-zone[data-z="4"] { background: var(--rune); }
+.hr-zone[data-z="5"] { background: var(--warn); }

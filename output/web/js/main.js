@@ -3,7 +3,7 @@
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
 } from './data.js';
-import { VITALS } from './data-vitals.js';
+import { VITALS, WORKOUTS } from './data-vitals.js';
 import { VITAL_TARGETS } from './vitals-targets.js';
 
 /* ── Render hero stats ── */
@@ -222,6 +222,46 @@ function renderVitals() {
   root.innerHTML = cards;
 }
 
+/* ── Render Workouts (Garmin activities) ── */
+function renderWorkouts() {
+  const root = document.getElementById('workouts-list');
+  if (!root) return;
+  if (!WORKOUTS || WORKOUTS.length === 0) {
+    root.innerHTML = `<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No workouts yet — drop a Garmin export in <code>data/raw/garmin/</code> and run <code>refresh.sh</code>.</p>`;
+    return;
+  }
+  const formatDate = ts => new Date(ts).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'2-digit'});
+  const formatDuration = s => {
+    if (s == null) return '';
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
+  const zoneBar = zones => {
+    if (!zones) return '';
+    const total = Object.values(zones).reduce((a, b) => a + b, 0) || 1;
+    return '<div class="hr-zones">' + [0,1,2,3,4,5].map(z => {
+      const v = zones[`zone_${z}`] || 0;
+      return v > 0 ? `<div class="hr-zone" data-z="${z}" style="width:${(100 * v / total).toFixed(1)}%"></div>` : '';
+    }).join('') + '</div>';
+  };
+  root.innerHTML = WORKOUTS.map(w => `
+    <article class="workout-card">
+      <div class="workout-date">${formatDate(w.ts_start)}</div>
+      <div>
+        <span class="workout-label">${w.label}</span>
+        <span class="workout-sport">${w.sport || ''}</span>
+        ${zoneBar(w.hr_zones)}
+      </div>
+      <div class="workout-stats">
+        ${formatDuration(w.duration_s)}
+        ${w.avg_hr ? ' · ' + Math.round(w.avg_hr) + ' bpm avg' : ''}
+        ${w.training_load ? ' · TL ' + Math.round(w.training_load) : ''}
+      </div>
+    </article>
+  `).join('');
+}
+
 /* ── Render cross-reference cards ── */
 function renderCrossRef() {
   const root = document.getElementById('crossref-grid');
@@ -389,6 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderFindingsBySection();
   renderPRS();
   renderVitals();
+  renderWorkouts();
   renderCrossRef();
   renderLabs();
   renderAgenda();
