@@ -1735,3 +1735,34 @@ body[data-active-tab="genome"]  .section[data-tab]:not([data-tab="genome"]) {
 .session-adjustment .adj-suggest {
   color: var(--fg-dim);
 }
+
+/* ── Traffic light + intensity pill on session adjustments ── */
+.session-traffic {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.3rem;
+}
+.session-traffic .traffic-pill {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+  padding: 4px 9px;
+  border: 1px solid currentColor;
+}
+.session-traffic[data-light="green"] .traffic-pill { color: var(--rune); }
+.session-traffic[data-light="amber"] .traffic-pill { color: var(--accent); }
+.session-traffic[data-light="red"]   .traffic-pill { color: var(--warn); }
+.session-traffic .traffic-meta {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.session-adjustment .adj-msg s {
+  color: var(--fg-mute);
+}

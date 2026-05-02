@@ -3,7 +3,7 @@
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
 } from './data.js';
-import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS } from './data-vitals.js';
+import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS, ADAPTED_SESSION } from './data-vitals.js';
 import { VITAL_TARGETS } from './vitals-targets.js';
 
 /* ── Render hero stats ── */
@@ -237,86 +237,8 @@ function todaysProgramKey() {
   return `Day ${((dow + 6) % 7) + 1}`;
 }
 
-/* Compute rule-based adjustments to today's prescription based on:
-   - sleep last night (<6h = lighten)
-   - RHR vs 30d baseline (elevated >5bpm = recovery low)
-   - active conditions (peroneal/shoulder/hip flares mentioned in profile)
-   - Action Loop drift (any 'off' card relevant to today's intensity)
-   Returns array of {severity, message, suggest}. */
-function computeSessionAdjustments(dayKey) {
-  const adjustments = [];
-
-  // Sleep last night
-  const sleepSeries = (VITALS.sleep_minutes && VITALS.sleep_minutes.series) || [];
-  if (sleepSeries.length > 0) {
-    const last = sleepSeries[sleepSeries.length - 1];
-    const lastMin = last && last.length > 1 ? last[1] : null;
-    if (lastMin != null && lastMin < 360) {  // <6h
-      adjustments.push({
-        severity: 'warn',
-        message: `Sleep last night was ${Math.round(lastMin)} min (<6h).`,
-        suggest: dayKey === 'Day 5' || dayKey === 'Day 7'
-          ? 'Already a light day — proceed.'
-          : 'Lighten intensity ~30%, or swap to mobility / Day 5 yoga.',
-      });
-    }
-  }
-
-  // RHR vs 30d baseline
-  const rhrSeries = (VITALS.heart_rate_resting && VITALS.heart_rate_resting.series) || [];
-  if (rhrSeries.length >= 7) {
-    const last = rhrSeries[rhrSeries.length - 1];
-    const lastVal = last && last.length > 1 ? last[1] : null;
-    const window30 = rhrSeries.slice(-30).map(r => r[1]).filter(v => v != null);
-    const baseline = window30.length ? window30.reduce((a, b) => a + b, 0) / window30.length : null;
-    if (lastVal != null && baseline != null && lastVal - baseline > 5) {
-      adjustments.push({
-        severity: 'warn',
-        message: `RHR ${Math.round(lastVal)} vs 30d baseline ${Math.round(baseline)} (+${Math.round(lastVal - baseline)} bpm).`,
-        suggest: 'Recovery indicator low. Cap target TL <40 for today, prefer zone 2.',
-      });
-    }
-  }
-
-  // Active conditions
-  const conds = HEALTH_PROFILE?.active_conditions || {};
-  const lowerExt = conds.lower_extremity || [];
-  const upperExt = conds.upper_extremity || [];
-  if (['Day 2', 'Day 4', 'Day 6'].includes(dayKey)) {
-    if (lowerExt.some(c => /peroneal|tendon/i.test(c))) {
-      adjustments.push({
-        severity: 'info',
-        message: 'Peroneal vulnerability active.',
-        suggest: 'Skip reverse lunges if any tenderness. Swap to stationary bike or rowing for cardio. No running.',
-      });
-    }
-    if (lowerExt.some(c => /hip/i.test(c))) {
-      adjustments.push({
-        severity: 'info',
-        message: 'Hip impingement / flexor tightness on file.',
-        suggest: 'Avoid deep squats under load. Soft knees on RDLs. 90/90 in warmup.',
-      });
-    }
-  }
-  if (['Day 1', 'Day 3'].includes(dayKey)) {
-    if (upperExt.some(c => /SLAP|shoulder/i.test(c))) {
-      adjustments.push({
-        severity: 'info',
-        message: 'Post-SLAP shoulder.',
-        suggest: 'No fixed-path overhead barbell. Landmines + cables only.',
-      });
-    }
-    if (upperExt.some(c => /epicondylitis|elbow/i.test(c))) {
-      adjustments.push({
-        severity: 'info',
-        message: 'Medial epicondylitis active.',
-        suggest: 'Reduce grip-heavy pulling. Use straps. No sustained dead-hang.',
-      });
-    }
-  }
-
-  return adjustments;
-}
+/* The adaptive engine on the laptop produces ADAPTED_SESSION.
+   This JS now just renders it; no decision logic in the browser. */
 
 function renderTodaySession() {
   const root = document.getElementById('session-grid');
@@ -334,18 +256,37 @@ function renderTodaySession() {
   }
   const blocks = [];
 
-  // Adaptive adjustments banner (organic update from vitals/conditions)
-  const adjustments = computeSessionAdjustments(dayKey);
-  if (adjustments.length > 0) {
+  // Adaptive engine output — traffic light, intensity, swaps, removed, added, notes
+  const adapted = ADAPTED_SESSION;
+  if (adapted) {
+    const tl = adapted.traffic_light || 'green';
+    const im = adapted.intensity_modifier ?? 1.0;
+    const imPct = Math.round(im * 100);
     blocks.push(`
       <div class="session-adjustments">
-        <div class="session-block-title" style="color: var(--accent);">Today's adjustments</div>
-        ${adjustments.map(a => `
-          <div class="session-adjustment" data-severity="${a.severity}">
-            <span class="adj-msg">${a.message}</span>
-            <span class="adj-suggest">${a.suggest}</span>
-          </div>
-        `).join('')}
+        <div class="session-traffic" data-light="${tl}">
+          <span class="traffic-pill">${tl.toUpperCase()}</span>
+          <span class="traffic-meta">${imPct}% intensity${adapted.intensity_reason ? ' · ' + adapted.intensity_reason : ''}</span>
+        </div>
+        ${(adapted.swaps || []).map(s => `
+          <div class="session-adjustment" data-severity="warn">
+            <span class="adj-msg">↻ Swap: <s>${s.original}</s> → <strong>${s.replacement}</strong></span>
+            <span class="adj-suggest">${s.reason}</span>
+          </div>`).join('')}
+        ${(adapted.removed || []).map(r => `
+          <div class="session-adjustment" data-severity="warn">
+            <span class="adj-msg">✗ Skip: <s>${r.item}</s></span>
+            <span class="adj-suggest">${r.reason}</span>
+          </div>`).join('')}
+        ${(adapted.added || []).map(a => `
+          <div class="session-adjustment" data-severity="info">
+            <span class="adj-msg">+ Add: <strong>${a.item}</strong></span>
+            <span class="adj-suggest">${a.reason}</span>
+          </div>`).join('')}
+        ${(adapted.notes || []).map(n => `
+          <div class="session-adjustment" data-severity="info">
+            <span class="adj-msg">${n}</span>
+          </div>`).join('')}
       </div>
     `);
   }
