@@ -2,67 +2,85 @@
 # Personal-data pipeline orchestrator.
 # Detects which raw inputs changed since last run, runs only the relevant
 # parsers, regenerates the dashboard. Each parser is idempotent.
+#
+# Usage:
+#   bash pipeline/refresh.sh           # normal — uses data/ and output/
+#   bash pipeline/refresh.sh --demo    # CI — uses tests/demo_data/ and /tmp
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-LOG=data/parquet/.last_refresh
-mkdir -p data/parquet/samples data/parquet/events output/web/js
+DATA_ROOT=data
+RAW_FINDINGS_DIR=output/raw_findings
+CROSS_REFS_YAML=output/cross_refs.yaml
+PARQUET_ROOT=data/parquet
+OUTPUT_JS=output/web/js
+if [[ "${1:-}" == "--demo" ]]; then
+    DATA_ROOT=tests/demo_data
+    RAW_FINDINGS_DIR=tests/demo_data/raw_findings
+    CROSS_REFS_YAML=tests/demo_data/cross_refs.yaml
+    PARQUET_ROOT=/tmp/parquet-demo
+    OUTPUT_JS=/tmp/web-demo
+    rm -rf "$PARQUET_ROOT" "$OUTPUT_JS"
+fi
+mkdir -p "$PARQUET_ROOT/samples" "$PARQUET_ROOT/findings" \
+         "$PARQUET_ROOT/cross_refs" "$PARQUET_ROOT/events" "$OUTPUT_JS"
+LOG="$PARQUET_ROOT/.last_refresh"
 
 echo "═══ Personal data refresh — $(date '+%Y-%m-%d %H:%M:%S')"
 
 # ── HealthKit ──
-HK_ZIP=data/raw/healthkit/export.zip
-HK_XML=data/raw/healthkit/apple_health_export/export.xml
+HK_ZIP="$DATA_ROOT/raw/healthkit/export.zip"
+HK_XML="$DATA_ROOT/raw/healthkit/apple_health_export/export.xml"
 if [[ -f "$HK_ZIP" ]]; then
     if [[ ! -f "$HK_XML" || "$HK_ZIP" -nt "$HK_XML" ]]; then
         echo "Extracting HealthKit zip..."
-        cd data/raw/healthkit && unzip -oq export.zip && cd "$ROOT"
+        ( cd "$DATA_ROOT/raw/healthkit" && unzip -oq export.zip )
     fi
     if [[ ! -f "$LOG" || "$HK_XML" -nt "$LOG" ]]; then
         echo "Parsing HealthKit XML → Parquet..."
-        python3 -m pipeline.parsers.healthkit "$HK_XML" --outdir data/parquet/samples
+        python3 -m pipeline.parsers.healthkit "$HK_XML" --outdir "$PARQUET_ROOT/samples"
     else
         echo "HealthKit Parquet up to date."
     fi
 fi
 
 # ── Garmin ──
-GR_ZIP=data/raw/garmin/garmin_export.zip
+GR_ZIP="$DATA_ROOT/raw/garmin/garmin_export.zip"
 if [[ -f "$GR_ZIP" ]]; then
     if [[ ! -f "$LOG" || "$GR_ZIP" -nt "$LOG" ]]; then
         echo "Parsing Garmin bulk export → Parquet..."
-        python3 -m pipeline.parsers.garmin "$GR_ZIP" --outdir data/parquet/samples
+        python3 -m pipeline.parsers.garmin "$GR_ZIP" --outdir "$PARQUET_ROOT/samples"
     else
         echo "Garmin Parquet up to date."
     fi
 fi
 
 # ── Genome → findings.parquet ──
-if [[ -d output/raw_findings ]]; then
-    if [[ ! -f "$LOG" || -n "$(find output/raw_findings -newer "$LOG" 2>/dev/null)" ]]; then
+if [[ -d "$RAW_FINDINGS_DIR" ]]; then
+    if [[ ! -f "$LOG" || -n "$(find "$RAW_FINDINGS_DIR" -newer "$LOG" 2>/dev/null)" ]]; then
         echo "Parsing genome TSVs → findings.parquet..."
         python3 -m pipeline.parsers.genome \
-            --raw output/raw_findings \
-            --outdir data/parquet/findings
+            --raw "$RAW_FINDINGS_DIR" \
+            --outdir "$PARQUET_ROOT/findings"
     else
         echo "Genome findings up to date."
     fi
 fi
 
 # ── Cross-refs YAML → cross_refs.parquet ──
-if [[ -f output/cross_refs.yaml ]]; then
+if [[ -f "$CROSS_REFS_YAML" ]]; then
     python3 -m pipeline.parsers.cross_refs \
-        --yaml output/cross_refs.yaml \
-        --out  data/parquet/cross_refs/cross_refs.parquet
+        --yaml "$CROSS_REFS_YAML" \
+        --out  "$PARQUET_ROOT/cross_refs/cross_refs.parquet"
 fi
 
 # ── Build vitals JS ──
 echo "Building data-vitals.js..."
 python3 -m pipeline.build_vitals \
-    --parquet data/parquet/samples \
-    --out output/web/js/data-vitals.js
+    --parquet "$PARQUET_ROOT/samples" \
+    --out "$OUTPUT_JS/data-vitals.js"
 
 # ── Mark refresh complete ──
 date +%s > "$LOG"
-echo "═══ Done. Open output/web/index.html or run: python3 -m http.server 8732 -d output/web"
+echo "═══ Done. data-vitals.js → $OUTPUT_JS/data-vitals.js"
