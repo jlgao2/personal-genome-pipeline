@@ -33,3 +33,15 @@ def test_build_vitals_handles_missing_type():
         vitals = build_vitals(parquet_dir)
         # Fixture has no blood pressure
         assert "bp_systolic" not in vitals or vitals.get("bp_systolic") is None
+
+
+def test_build_vitals_with_garmin_real_data():
+    """If both Garmin + HealthKit are present, RHR series uses unified daily values."""
+    real = Path("data/parquet/samples")
+    if not (list(real.glob("garmin-*.parquet")) and list(real.glob("healthkit-*.parquet"))):
+        return
+    vitals = build_vitals(real)
+    rhr = vitals.get("heart_rate_resting")
+    assert rhr is not None
+    # Garmin contributes ~2,000+ daily-rollup days vs. HealthKit's ~1,200
+    assert len(rhr["series"]) >= 1500

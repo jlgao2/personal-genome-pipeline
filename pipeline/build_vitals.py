@@ -15,48 +15,99 @@ import duckdb
 # Vitals we surface on the dashboard. Each entry is a query that reduces the
 # raw samples to one daily value (avg/min/max/sum depending on the metric).
 VITAL_QUERIES: dict[str, str] = {
+    # Garmin wins on overlapping days; HealthKit fills earlier history.
     "heart_rate_resting": """
-        SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, avg(value) AS v
-        FROM   read_parquet('{parquet}/healthkit-*.parquet', union_by_name=true)
-        WHERE  type = 'heart_rate_resting' AND value IS NOT NULL
-        GROUP BY d ORDER BY d
+        WITH per_day AS (
+          SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, source, avg(value) AS v
+          FROM   read_parquet('{parquet}/*.parquet', union_by_name=true)
+          WHERE  type = 'heart_rate_resting' AND value IS NOT NULL
+          GROUP BY d, source
+        ),
+        ranked AS (
+          SELECT d, source, v,
+                 row_number() OVER (PARTITION BY d
+                                    ORDER BY CASE source WHEN 'garmin' THEN 0 ELSE 1 END) AS rn
+          FROM per_day
+        )
+        SELECT d, v FROM ranked WHERE rn = 1 ORDER BY d
     """,
     "vo2max": """
         SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, max(value) AS v
-        FROM   read_parquet('{parquet}/healthkit-*.parquet', union_by_name=true)
+        FROM   read_parquet('{parquet}/*.parquet', union_by_name=true)
         WHERE  type = 'vo2max' AND value IS NOT NULL
         GROUP BY d ORDER BY d
     """,
     "weight": """
-        SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, avg(value) AS v
-        FROM   read_parquet('{parquet}/healthkit-*.parquet', union_by_name=true)
-        WHERE  type = 'weight' AND value IS NOT NULL
-        GROUP BY d ORDER BY d
+        WITH per_day AS (
+          -- Garmin weight is in grams; convert to lb to match HealthKit's unit.
+          SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, source,
+                 avg(CASE WHEN source='garmin' THEN value / 453.592 ELSE value END) AS v
+          FROM   read_parquet('{parquet}/*.parquet', union_by_name=true)
+          WHERE  type = 'weight' AND value IS NOT NULL
+          GROUP BY d, source
+        ),
+        ranked AS (
+          SELECT d, source, v,
+                 row_number() OVER (PARTITION BY d
+                                    ORDER BY CASE source WHEN 'garmin' THEN 0 ELSE 1 END) AS rn
+          FROM per_day
+        )
+        SELECT d, v FROM ranked WHERE rn = 1 ORDER BY d
     """,
     "bp_systolic": """
         SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, avg(value) AS v
-        FROM   read_parquet('{parquet}/healthkit-*.parquet', union_by_name=true)
+        FROM   read_parquet('{parquet}/*.parquet', union_by_name=true)
         WHERE  type = 'bp_systolic' AND value IS NOT NULL
         GROUP BY d ORDER BY d
     """,
     "bp_diastolic": """
         SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, avg(value) AS v
-        FROM   read_parquet('{parquet}/healthkit-*.parquet', union_by_name=true)
+        FROM   read_parquet('{parquet}/*.parquet', union_by_name=true)
         WHERE  type = 'bp_diastolic' AND value IS NOT NULL
         GROUP BY d ORDER BY d
     """,
+    # Sleep: Garmin gives stage-level seconds; HealthKit gives category records.
     "sleep_minutes": """
-        SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d,
-               sum(epoch(ts_end::TIMESTAMP - ts::TIMESTAMP) / 60.0) AS v
-        FROM   read_parquet('{parquet}/healthkit-*.parquet', union_by_name=true)
-        WHERE  type = 'sleep_stage' AND value IS NULL
-        GROUP BY d ORDER BY d
+        WITH garmin_per_night AS (
+          SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d,
+                 sum(value) / 60.0 AS v
+          FROM   read_parquet('{parquet}/*.parquet', union_by_name=true)
+          WHERE  source = 'garmin' AND type IN ('sleep_deep','sleep_light','sleep_rem')
+          GROUP BY d
+        ),
+        healthkit_per_night AS (
+          SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d,
+                 sum(epoch(ts_end::TIMESTAMP - ts::TIMESTAMP) / 60.0) AS v
+          FROM   read_parquet('{parquet}/*.parquet', union_by_name=true)
+          WHERE  source = 'healthkit' AND type = 'sleep_stage' AND value IS NULL
+          GROUP BY d
+        )
+        SELECT COALESCE(g.d, h.d) AS d,
+               COALESCE(g.v, h.v) AS v
+        FROM garmin_per_night g
+        FULL OUTER JOIN healthkit_per_night h ON g.d = h.d
+        ORDER BY d
     """,
     "exercise_minutes": """
-        SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, sum(value) AS v
-        FROM   read_parquet('{parquet}/healthkit-*.parquet', union_by_name=true)
-        WHERE  type = 'exercise_minutes' AND value IS NOT NULL
-        GROUP BY d ORDER BY d
+        WITH garmin_per_day AS (
+          SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d,
+                 sum(value) AS v
+          FROM   read_parquet('{parquet}/*.parquet', union_by_name=true)
+          WHERE  source = 'garmin'
+            AND type IN ('moderate_minutes','vigorous_minutes')
+          GROUP BY d
+        ),
+        healthkit_per_day AS (
+          SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, sum(value) AS v
+          FROM   read_parquet('{parquet}/*.parquet', union_by_name=true)
+          WHERE  source = 'healthkit' AND type = 'exercise_minutes' AND value IS NOT NULL
+          GROUP BY d
+        )
+        SELECT COALESCE(g.d, h.d) AS d,
+               COALESCE(g.v, h.v) AS v
+        FROM garmin_per_day g
+        FULL OUTER JOIN healthkit_per_day h ON g.d = h.d
+        ORDER BY d
     """,
 }
 
