@@ -211,6 +211,42 @@ For all of these, **30× whole-genome sequencing** ($200–600 from Nebula, Dant
 
 ---
 
+## Bring Your Own Data (BYOD)
+
+Beyond 23andMe, this pipeline also ingests longitudinal health data. Drop any of
+the supported source files into `data/raw/<source>/` and run
+`bash pipeline/refresh.sh` — the dashboard will pick up new charts automatically.
+
+### Supported sources
+
+| Source | Where to put it | Status |
+|---|---|---|
+| **23andMe v5 raw** | `data/raw/genome/genome_*.zip` | implemented (Phase 1) |
+| **Apple HealthKit** | `data/raw/healthkit/export.zip` (the ZIP from Health.app → Profile → "Export All Health Data") | implemented (Vitals section) |
+| **Garmin Connect bulk** | `data/raw/garmin/` (the unzipped bulk export from Garmin Connect → Profile → Account → Export Your Data) | planned |
+| **Social aggregates** | `data/raw/social/aggregates.parquet` (produced by the separate `social-media-graph` repo, derived signals only — no raw contacts) | planned |
+| **Clinical labs** | `data/raw/labs/*.csv` (LabCorp/Quest CSV exports) | planned |
+
+### What gets parsed
+
+For Apple HealthKit specifically: the parser pulls these record types into the
+Vitals section: heart rate (resting, walking-avg, HRV), VO₂ max, blood
+pressure, weight, BMI, body fat %, steps, distance, active/basal energy,
+exercise minutes, sleep stages, respiratory rate, SpO₂, blood glucose.
+
+Other Apple HealthKit types (e.g., dietary records) are silently skipped —
+extending coverage = adding rows to
+`pipeline/parsers/healthkit_types.py:HEALTHKIT_TYPE_MAP`.
+
+### Privacy
+
+Real data lives only on your machine — `data/`, `output/`, and the
+auto-generated `output/web/js/data-vitals.js` are gitignored. The public
+`docs/` site keeps the synthetic Eunjung Kim demo. Nothing personal touches
+GitHub unless you explicitly commit it.
+
+---
+
 ## License & credits
 
 Pipeline scripts: MIT.
