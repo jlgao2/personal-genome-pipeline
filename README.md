@@ -225,7 +225,8 @@ the supported source files into `data/raw/<source>/` and run
 |---|---|---|
 | **23andMe v5 raw** | `data/raw/genome/genome_*.zip` | implemented (Phase 1) |
 | **Apple HealthKit** | `data/raw/healthkit/export.zip` (the ZIP from Health.app → Profile → "Export All Health Data") | implemented (Vitals section) |
-| **Garmin Connect bulk** | `data/raw/garmin/` (the unzipped bulk export from Garmin Connect → Profile → Account → Export Your Data) | planned |
+| **Garmin Connect bulk** | `data/raw/garmin/garmin_export.zip` (bulk ZIP from Garmin Connect → Account → Export Your Data) | implemented (Vitals + Workouts) |
+| **MyChart / FHIR** | `data/raw/fhir/*.json` (download FHIR Bundle from MyChart Web → Health → "Download My Record") | implemented (Action Loop) |
 | **Social aggregates** | `data/raw/social/aggregates.parquet` (produced by the separate `social-media-graph` repo, derived signals only — no raw contacts) | planned |
 | **Clinical labs** | `data/raw/labs/*.csv` (LabCorp/Quest CSV exports) | planned |
 

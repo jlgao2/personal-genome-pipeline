@@ -56,6 +56,24 @@ if [[ -f "$GR_ZIP" ]]; then
     fi
 fi
 
+# ── FHIR / MyChart bundle ──
+# Drop your MyChart "Download My Record" JSON at data/raw/fhir/bundle.json
+# (or any *.json in that dir — the most recent one wins).
+FHIR_DIR="$DATA_ROOT/raw/fhir"
+if [[ -d "$FHIR_DIR" ]]; then
+    LATEST_FHIR=$(ls -t "$FHIR_DIR"/*.json 2>/dev/null | head -1 || true)
+    if [[ -n "$LATEST_FHIR" ]]; then
+        if [[ ! -f "$LOG" || "$LATEST_FHIR" -nt "$LOG" ]]; then
+            echo "Parsing FHIR bundle → samples + events..."
+            python3 -m pipeline.parsers.fhir "$LATEST_FHIR" \
+                --samples-outdir "$PARQUET_ROOT/samples" \
+                --events-outdir  "$PARQUET_ROOT/events"
+        else
+            echo "FHIR bundle up to date."
+        fi
+    fi
+fi
+
 # ── Genome → findings.parquet ──
 if [[ -d "$RAW_FINDINGS_DIR" ]]; then
     if [[ ! -f "$LOG" || -n "$(find "$RAW_FINDINGS_DIR" -newer "$LOG" 2>/dev/null)" ]]; then
