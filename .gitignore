@@ -12,6 +12,12 @@ genome_*.txt
 *ancestrydna*.txt
 *myheritage*.txt
 
+# ── Stray downloads at project root (Garmin/HealthKit re-uploads, etc.) ──
+/export.zip
+/db0b9ac9-*.zip
+/*_export.zip
+/garmin*.zip
+
 # ── Personal medical records / PDFs (NEVER commit) ──
 *.pdf
 requested_record*
