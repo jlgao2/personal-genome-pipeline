@@ -30,6 +30,7 @@ output/README.md
 # ── Dashboard data (contains personal findings — use data.example.js) ──
 output/web/js/data.js
 output/web/js/data-vitals.js
+output/cross_refs.yaml
 
 # ── Logs may contain sample-specific info ──
 logs/
