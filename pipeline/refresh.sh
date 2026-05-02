@@ -27,6 +27,17 @@ if [[ -f "$HK_ZIP" ]]; then
     fi
 fi
 
+# ── Garmin ──
+GR_ZIP=data/raw/garmin/garmin_export.zip
+if [[ -f "$GR_ZIP" ]]; then
+    if [[ ! -f "$LOG" || "$GR_ZIP" -nt "$LOG" ]]; then
+        echo "Parsing Garmin bulk export → Parquet..."
+        python3 -m pipeline.parsers.garmin "$GR_ZIP" --outdir data/parquet/samples
+    else
+        echo "Garmin Parquet up to date."
+    fi
+fi
+
 # ── Genome → findings.parquet ──
 if [[ -d output/raw_findings ]]; then
     if [[ ! -f "$LOG" || -n "$(find output/raw_findings -newer "$LOG" 2>/dev/null)" ]]; then
