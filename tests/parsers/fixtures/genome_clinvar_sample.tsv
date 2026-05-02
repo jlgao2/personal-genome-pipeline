@@ -1,0 +1,3 @@
+chrom	pos	ref	alt	rsid	gene	clnsig_class	clnsig	clndn	clnrevstat	stars	user_gt	user_zygosity
+1	55504650	G	A	rs151193009	PCSK9	Pathogenic	Conflicting	Hypercholesterolemia	criteria_provided	1	1/1	homozygous_alt
+19	41928081	C	T	rs78338921	BCKDHA	Pathogenic/Likely_pathogenic	Pathogenic/Likely_pathogenic	Maple syrup urine disease	multiple_submitters	2	0/1	heterozygous

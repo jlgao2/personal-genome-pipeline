@@ -1,0 +1,4 @@
+rsid	gene	drug	haplotype_role	chrom	pos	ref	alt	user_genotype	n_alt	interpretation
+rs9923231	VKORC1	Warfarin	-1639G>A: A allele = lower warfarin dose required	16	31107689	C	T	T/T	2	T/T: high warfarin sensitivity, ~50% lower starting dose.
+rs4244285	CYP2C19	Clopidogrel, PPIs	*2 loss-of-function	10	96541616	G	A	A/A	2	A/A: CYP2C19 *2/*2 — POOR metabolizer.
+rs1057910	CYP2C9	Warfarin	*3 reduces metabolism	10	96741053	A	.	A/A	0	A/A: no *3 allele.
