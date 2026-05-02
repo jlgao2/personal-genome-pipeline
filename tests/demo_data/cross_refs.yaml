@@ -1,0 +1,6 @@
+# Synthetic demo cross-refs for CI. Linked to fixture genotypes.
+- finding_id: pgx_quick:rs9923231
+  sample_type: heart_rate_resting
+  expected_direction: decrease
+  target_value: 60.0
+  takeaway: Synthetic example — VKORC1 finding linked to RHR for CI.
