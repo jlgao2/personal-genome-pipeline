@@ -5,10 +5,15 @@ xml.etree.iterparse and clear elements as we go to keep memory bounded.
 """
 from __future__ import annotations
 
+import json
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Iterator
+
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from pipeline.parsers.healthkit_types import normalize_type
 
@@ -81,3 +86,41 @@ def iter_samples(xml_path: Path) -> Iterator[dict]:
         }
 
         elem.clear()  # critical for memory bounds on the real 427 MB file
+
+
+def parse_to_parquet(xml_path: Path, outdir: Path) -> int:
+    """Parse export.xml and write samples to outdir/healthkit-YYYY-MM.parquet
+    partitioned by the start month of each sample.
+
+    Idempotent: any existing healthkit-*.parquet files in outdir are deleted
+    before writing.
+    Returns the total number of samples written.
+    """
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    # Idempotency: clear previous output for this source.
+    for old in outdir.glob("healthkit-*.parquet"):
+        old.unlink()
+
+    # Group samples by year-month so we can write one file per partition.
+    by_partition: dict[str, list[dict]] = defaultdict(list)
+    n_total = 0
+    for sample in iter_samples(xml_path):
+        partition = sample["ts"][:7]  # 'YYYY-MM' from ISO timestamp
+        # JSON-encode the meta dict so it sits cleanly in Parquet.
+        sample = {**sample, "meta": json.dumps(sample["meta"])}
+        by_partition[partition].append(sample)
+        n_total += 1
+
+    for partition, samples in by_partition.items():
+        table = pa.Table.from_pylist(samples, schema=pa.schema([
+            ("ts",     pa.string()),
+            ("source", pa.string()),
+            ("type",   pa.string()),
+            ("value",  pa.float64()),
+            ("unit",   pa.string()),
+            ("meta",   pa.string()),
+        ]))
+        pq.write_table(table, outdir / f"healthkit-{partition}.parquet")
+
+    return n_total
