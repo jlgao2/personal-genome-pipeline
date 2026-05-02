@@ -24,6 +24,7 @@
     <nav class="rail-section">
       <span class="rail-section-label">Findings</span>
       <ul class="nav-sections">
+        <li><button class="nav-btn" data-section="action-loop" data-num="00">Action Loop</button></li>
         <li><button class="nav-btn" data-section="actionable" data-num="01">Actionable</button></li>
         <li><button class="nav-btn" data-section="drugs"      data-num="02">Drugs (PGx)</button></li>
         <li><button class="nav-btn" data-section="cardio"     data-num="03">Cardiology</button></li>
@@ -77,6 +78,18 @@
     <h1 class="hero-title">GAO, JIA LIN <span class="accent">/</span> M / 31</h1>
     <div class="hero-stats" id="hero-stats"></div>
   </header>
+
+  <!-- Action Loop — genome × measured signal × today's gap -->
+  <section class="section" id="action-loop">
+    <p class="section-kicker">Genome × measured · today</p>
+    <h2 class="section-title">Action Loop</h2>
+    <p class="section-lead">
+      Each card pairs a genetic finding with the measurement it predicts and the
+      most recent value from your wearables/labs. Green = on target. Amber = drifting.
+      Gray = no data yet (drop a MyChart export or wait for next sync).
+    </p>
+    <div class="action-loop-grid" id="action-loop-grid"></div>
+  </section>
 
   <!-- Actionable -->
   <section class="section" id="actionable" data-findings-section>

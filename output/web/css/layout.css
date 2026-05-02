@@ -1166,3 +1166,85 @@ main {
 .hr-zone[data-z="3"] { background: var(--accent); }
 .hr-zone[data-z="4"] { background: var(--rune); }
 .hr-zone[data-z="5"] { background: var(--warn); }
+
+/* ── Action Loop cards ── */
+.action-loop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.action-card {
+  background: var(--bg-card);
+  padding: 1rem 1.1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-left: 2px solid var(--border);
+}
+.action-card[data-state="ok"]    { border-left-color: var(--rune); }
+.action-card[data-state="drift"] { border-left-color: var(--accent); }
+.action-card[data-state="off"]   { border-left-color: var(--warn); }
+.action-card[data-state="none"]  { border-left-color: var(--border); }
+.action-card-header {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.action-card-header .gene { color: var(--accent); }
+.action-card-finding {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--fg);
+  line-height: 1.3;
+}
+.action-card-meter {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.6rem;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  border-top: 1px solid var(--border);
+  padding-top: 0.55rem;
+}
+.action-card-meter .actual {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fg);
+  line-height: 1;
+}
+.action-card-meter[data-state="ok"]    .actual { color: var(--rune); }
+.action-card-meter[data-state="drift"] .actual { color: var(--accent); }
+.action-card-meter[data-state="off"]   .actual { color: var(--warn); }
+.action-card-meter[data-state="none"]  .actual { color: var(--fg-dim); font-size: 0.9rem; }
+.action-card-takeaway {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--fg-dim);
+  line-height: 1.45;
+  border-top: 1px solid var(--border);
+  padding-top: 0.55rem;
+}
+.action-card-stale {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+}

@@ -3,7 +3,7 @@
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
 } from './data.js';
-import { VITALS, WORKOUTS } from './data-vitals.js';
+import { VITALS, WORKOUTS, ACTION_LOOP } from './data-vitals.js';
 import { VITAL_TARGETS } from './vitals-targets.js';
 
 /* ── Render hero stats ── */
@@ -144,6 +144,96 @@ function renderPRS() {
       </div>
     </article>
   `).join('');
+}
+
+/* ── Render Action Loop (genome × measured × today) ── */
+const SAMPLE_TYPE_LABELS = {
+  heart_rate_resting: 'Resting HR',
+  vo2max:             'VO₂ Max',
+  weight:             'Weight',
+  bp_systolic:        'BP Systolic',
+  bp_diastolic:       'BP Diastolic',
+  sleep_minutes:      'Sleep',
+  exercise_minutes:   'Exercise',
+  homocysteine:       'Homocysteine',
+  ldl_cholesterol:    'LDL',
+  warfarin_dose_response:   'Warfarin',
+  clopidogrel_response:     'Clopidogrel',
+};
+
+const SAMPLE_TYPE_UNITS = {
+  heart_rate_resting: 'bpm',
+  vo2max:             'mL/min·kg',
+  weight:             'lb',
+  bp_systolic:        'mmHg',
+  bp_diastolic:       'mmHg',
+  sleep_minutes:      'min',
+  exercise_minutes:   'min',
+  homocysteine:       'µmol/L',
+  ldl_cholesterol:    'mg/dL',
+};
+
+function actionState(latest, target, dir) {
+  if (latest == null || target == null) return 'none';
+  // 'increase' = elevated risk → we want value BELOW target
+  // 'decrease' = depressed function → we want value AT/ABOVE target
+  // 'stable'   = monitor; treat 10% drift as warning
+  const ratio = latest / target;
+  if (dir === 'increase') {
+    if (ratio < 0.95) return 'ok';
+    if (ratio < 1.10) return 'drift';
+    return 'off';
+  }
+  if (dir === 'decrease') {
+    if (ratio >= 1.0)  return 'ok';
+    if (ratio >= 0.85) return 'drift';
+    return 'off';
+  }
+  if (Math.abs(1 - ratio) < 0.05) return 'ok';
+  if (Math.abs(1 - ratio) < 0.15) return 'drift';
+  return 'off';
+}
+
+function renderActionLoop() {
+  const root = document.getElementById('action-loop-grid');
+  if (!root) return;
+  if (!ACTION_LOOP || ACTION_LOOP.length === 0) {
+    root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No cross-refs yet — populate <code>output/cross_refs.yaml</code> and run <code>refresh.sh</code>.</p>';
+    return;
+  }
+  const fmtVal = (v, unit) => v == null ? '—' : `${v.toFixed(1)} ${unit || ''}`.trim();
+  const fmtAge = ts => {
+    if (!ts) return 'no data';
+    const days = Math.floor((Date.now() - new Date(ts).getTime()) / 86_400_000);
+    if (days === 0) return 'today';
+    if (days === 1) return 'yesterday';
+    if (days < 7) return `${days}d ago`;
+    if (days < 60) return `${Math.floor(days/7)}w ago`;
+    return `${Math.floor(days/30)}mo ago`;
+  };
+  root.innerHTML = ACTION_LOOP.map(c => {
+    const label = SAMPLE_TYPE_LABELS[c.sample_type] || c.sample_type;
+    const unit = SAMPLE_TYPE_UNITS[c.sample_type] || '';
+    const state = actionState(c.latest_value, c.target_value, c.expected_direction);
+    const target = c.target_value != null ? `${c.target_value} ${unit}`.trim() : 'conditional';
+    const arrow = c.expected_direction === 'increase' ? '↓' : c.expected_direction === 'decrease' ? '↑' : '=';
+    return `
+      <article class="action-card" data-state="${state}">
+        <div class="action-card-header">
+          <span class="gene">${c.gene || 'PRS'}</span>
+          <span>${c.finding_tier || ''}</span>
+        </div>
+        <div class="action-card-finding">${c.finding_summary || c.finding_id}</div>
+        <div class="action-card-meter" data-state="${state}">
+          <span>${label}</span>
+          <span class="actual">${fmtVal(c.latest_value, unit)}</span>
+          <span>${arrow} ${target}</span>
+        </div>
+        <div class="action-card-takeaway">${c.takeaway || ''}</div>
+        <div class="action-card-stale">${fmtAge(c.latest_ts)}</div>
+      </article>
+    `;
+  }).join('');
 }
 
 /* ── Render Vitals (HealthKit time-series cards) ── */
@@ -425,6 +515,7 @@ function wirePrint() {
 /* ── Boot ── */
 document.addEventListener('DOMContentLoaded', () => {
   renderStats();
+  renderActionLoop();
   renderActions();
   renderFindingsBySection();
   renderPRS();
