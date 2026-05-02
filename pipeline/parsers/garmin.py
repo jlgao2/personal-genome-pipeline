@@ -12,8 +12,9 @@ import json
 import tempfile
 import zipfile
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Optional
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -133,6 +134,63 @@ def iter_biometric_samples(json_path: Path) -> Iterator[dict]:
             }
 
 
+def _ts_from_ms(ms: int) -> str:
+    """Convert epoch milliseconds to ISO-8601 UTC."""
+    return datetime.fromtimestamp(ms / 1000.0, tz=timezone.utc).isoformat()
+
+
+def iter_activities(json_path: Path) -> Iterator[dict]:
+    """Yield event dicts from one summarizedActivities.json file."""
+    with json_path.open() as f:
+        outer = json.load(f)
+    if not outer:
+        return
+    activities = outer[0].get("summarizedActivitiesExport") or []
+    for a in activities:
+        begin_ms = a.get("beginTimestamp")
+        if begin_ms is None:
+            continue
+        try:
+            duration_ms = float(a.get("duration") or 0)
+        except (TypeError, ValueError):
+            duration_ms = 0
+        ts_start = _ts_from_ms(begin_ms)
+        ts_end   = _ts_from_ms(int(begin_ms + duration_ms))
+
+        zones = {}
+        for i in range(6):
+            v = a.get(f"hrTimeInZone_{i}")
+            if v is not None:
+                zones[f"zone_{i}"] = v
+
+        meta = {
+            "activity_id":   a.get("activityId"),
+            "sport":         a.get("sportType"),
+            "activity_type": a.get("activityType"),
+            "duration_s":    duration_ms / 1000.0 if duration_ms else None,
+            "distance_m":    a.get("distance"),
+            "calories":      a.get("calories"),
+            "avg_hr":        a.get("avgHr"),
+            "max_hr":        a.get("maxHr"),
+            "min_hr":        a.get("minHr"),
+            "hr_time_in_zone": zones if zones else None,
+            "training_load":   a.get("activityTrainingLoad"),
+            "aerobic_te":      a.get("aerobicTrainingEffect"),
+            "anaerobic_te":    a.get("anaerobicTrainingEffect"),
+            "location":        a.get("locationName"),
+        }
+        meta = {k: v for k, v in meta.items() if v is not None}
+
+        yield {
+            "ts_start": ts_start,
+            "ts_end":   ts_end,
+            "source":   "garmin",
+            "type":     "workout",
+            "label":    a.get("name") or a.get("sportType") or "Workout",
+            "meta":     meta,
+        }
+
+
 def _iter_from_zip_member(zf, name, parser_fn):
     """Materialize one ZIP member to a temp file, yield parsed samples."""
     with tempfile.NamedTemporaryFile(suffix=".json", delete=True) as tmp:
@@ -141,39 +199,53 @@ def _iter_from_zip_member(zf, name, parser_fn):
         yield from parser_fn(Path(tmp.name))
 
 
-def parse_zip_to_parquet(zip_path: Path, outdir: Path) -> int:
+def parse_zip_to_parquet(zip_path: Path, outdir: Path,
+                         events_outdir: Optional[Path] = None) -> int:
     """Parse all known JSON files in a Garmin bulk-export ZIP to Parquet.
 
-    Idempotent: clears existing garmin-*.parquet before writing.
-    Returns total samples written.
+    `outdir` receives sample partitions (samples/garmin-YYYY-MM.parquet).
+    `events_outdir` (default: outdir.parent / 'events') receives event
+    partitions for activities. Idempotent — both clear existing
+    garmin-*.parquet before writing. Returns total rows written.
     """
     outdir.mkdir(parents=True, exist_ok=True)
+    if events_outdir is None:
+        events_outdir = outdir.parent / "events"
+    events_outdir.mkdir(parents=True, exist_ok=True)
+
     for old in outdir.glob("garmin-*.parquet"):
+        old.unlink()
+    for old in events_outdir.glob("garmin-*.parquet"):
         old.unlink()
 
     rows_by_partition: dict[str, list[dict]] = defaultdict(list)
+    events_by_partition: dict[str, list[dict]] = defaultdict(list)
     n_total = 0
 
     with zipfile.ZipFile(zip_path, "r") as zf:
         for name in zf.namelist():
             if name.startswith("DI_CONNECT/DI-Connect-Aggregator/UDSFile_") and name.endswith(".json"):
-                samples = list(_iter_from_zip_member(zf, name, iter_uds_samples))
+                for s in _iter_from_zip_member(zf, name, iter_uds_samples):
+                    s = {**s, "meta": json.dumps(s["meta"])}
+                    rows_by_partition[s["ts"][:7]].append(s)
+                    n_total += 1
             elif name.startswith("DI_CONNECT/DI-Connect-Wellness/") and name.endswith("_sleepData.json"):
-                samples = list(_iter_from_zip_member(zf, name, iter_sleep_samples))
+                for s in _iter_from_zip_member(zf, name, iter_sleep_samples):
+                    s = {**s, "meta": json.dumps(s["meta"])}
+                    rows_by_partition[s["ts"][:7]].append(s)
+                    n_total += 1
             elif name.endswith("_userBioMetrics.json") and "DI-Connect-Wellness" in name:
-                samples = list(_iter_from_zip_member(zf, name, iter_biometric_samples))
-            else:
-                continue
-            for s in samples:
-                partition = s["ts"][:7]
-                s = {**s, "meta": json.dumps(s["meta"])}
-                rows_by_partition[partition].append(s)
-                n_total += 1
+                for s in _iter_from_zip_member(zf, name, iter_biometric_samples):
+                    s = {**s, "meta": json.dumps(s["meta"])}
+                    rows_by_partition[s["ts"][:7]].append(s)
+                    n_total += 1
+            elif name.endswith("_summarizedActivities.json") and "DI-Connect-Fitness" in name:
+                for e in _iter_from_zip_member(zf, name, iter_activities):
+                    e = {**e, "meta": json.dumps(e["meta"])}
+                    events_by_partition[e["ts_start"][:7]].append(e)
+                    n_total += 1
 
-    if not rows_by_partition:
-        return 0
-
-    schema = pa.schema([
+    sample_schema = pa.schema([
         ("ts",     pa.string()),
         ("ts_end", pa.string()),
         ("source", pa.string()),
@@ -183,8 +255,21 @@ def parse_zip_to_parquet(zip_path: Path, outdir: Path) -> int:
         ("meta",   pa.string()),
     ])
     for partition, samples in rows_by_partition.items():
-        table = pa.Table.from_pylist(samples, schema=schema)
+        table = pa.Table.from_pylist(samples, schema=sample_schema)
         pq.write_table(table, outdir / f"garmin-{partition}.parquet")
+
+    event_schema = pa.schema([
+        ("ts_start", pa.string()),
+        ("ts_end",   pa.string()),
+        ("source",   pa.string()),
+        ("type",     pa.string()),
+        ("label",    pa.string()),
+        ("meta",     pa.string()),
+    ])
+    for partition, events in events_by_partition.items():
+        table = pa.Table.from_pylist(events, schema=event_schema)
+        pq.write_table(table, events_outdir / f"garmin-{partition}.parquet")
+
     return n_total
 
 

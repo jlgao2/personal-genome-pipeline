@@ -1,0 +1,39 @@
+[{
+  "summarizedActivitiesExport": [
+    {
+      "activityId": 1,
+      "activityType": "tennis_v2",
+      "sportType": "TENNIS",
+      "name": "Chicago Tennis",
+      "beginTimestamp": 1776986466000,
+      "duration": 2367519,
+      "distance": 188393,
+      "calories": 2229,
+      "avgHr": 140,
+      "maxHr": 177,
+      "minHr": 70,
+      "hrTimeInZone_0": 105313,
+      "hrTimeInZone_1": 27996,
+      "hrTimeInZone_2": 689237,
+      "hrTimeInZone_3": 1392968,
+      "hrTimeInZone_4": 148002,
+      "hrTimeInZone_5": 4003,
+      "activityTrainingLoad": 97.7,
+      "aerobicTrainingEffect": 2.9,
+      "anaerobicTrainingEffect": 2.4,
+      "locationName": "Chicago"
+    },
+    {
+      "activityId": 2,
+      "activityType": "running",
+      "sportType": "RUNNING",
+      "name": "Morning Run",
+      "beginTimestamp": 1776900000000,
+      "duration": 1800000,
+      "distance": 5000,
+      "calories": 410,
+      "avgHr": 152,
+      "maxHr": 168
+    }
+  ]
+}]
