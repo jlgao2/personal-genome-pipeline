@@ -108,5 +108,16 @@ python3 -m pipeline.build_vitals \
     --out "$OUTPUT_JS/data-vitals.js"
 
 # ── Mark refresh complete ──
+# ── Publish snapshot for the iOS app (read via iCloud Drive) ──
+python3 -c "
+from pathlib import Path
+from pipeline.build_vitals import publish_ios_export
+publish_ios_export(Path('$PARQUET_ROOT/samples'),
+                   events_dir=Path('$PARQUET_ROOT/events'),
+                   parquet_root=Path('$PARQUET_ROOT'),
+                   profile_path=Path('${PROFILE_JSON:-output/health_profile.json}'),
+                   outdir=Path('output/ios_export'))
+" 2>/dev/null && echo "Published ios_export/ios_bundle.json"
+
 date +%s > "$LOG"
 echo "═══ Done. data-vitals.js → $OUTPUT_JS/data-vitals.js"

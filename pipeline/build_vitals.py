@@ -287,6 +287,50 @@ def load_health_profile(profile_path: Path) -> Optional[dict]:
         return json.load(f)
 
 
+def build_genomics_from_parquet(findings_dir: Path) -> dict:
+    """Pull all findings rows from findings.parquet, grouped by source_tsv.
+    Returns a dict ready for the iOS app to render — no data.js dependency.
+    """
+    if not findings_dir.exists() or not list(findings_dir.glob("findings-*.parquet")):
+        return {}
+    rows = duckdb.query(
+        f"SELECT id, source_tsv, gene, rsid, chrom, pos, ref, alt, "
+        f"       genotype, tier, summary, meta "
+        f"FROM read_parquet('{str(findings_dir).rstrip('/')}/findings-*.parquet') "
+        f"ORDER BY source_tsv, gene"
+    ).fetchall()
+    out: dict[str, list[dict]] = {}
+    for r in rows:
+        d = {
+            "id":         r[0],
+            "source_tsv": r[1],
+            "gene":       r[2],
+            "rsid":       r[3],
+            "chrom":      r[4],
+            "pos":        r[5],
+            "ref":        r[6],
+            "alt":        r[7],
+            "genotype":   r[8],
+            "tier":       r[9],
+            "summary":    r[10],
+        }
+        # Parse meta JSON if present
+        try:
+            d["meta"] = json.loads(r[11]) if r[11] else None
+        except (TypeError, ValueError):
+            d["meta"] = None
+        out.setdefault(d["source_tsv"], []).append(d)
+    # Summary stats for the app
+    return {
+        "by_source": out,
+        "tier_counts": dict(duckdb.query(
+            f"SELECT tier, count(*) FROM read_parquet('{str(findings_dir).rstrip('/')}/findings-*.parquet') "
+            f"GROUP BY tier ORDER BY tier"
+        ).fetchall()),
+        "total": sum(len(v) for v in out.values()),
+    }
+
+
 def write_vitals_js(parquet_dir: Path, out_path: Path,
                     events_dir: Optional[Path] = None,
                     parquet_root: Optional[Path] = None,
@@ -310,6 +354,29 @@ def write_vitals_js(parquet_dir: Path, out_path: Path,
         f"export const ACTION_LOOP = {json.dumps(action_loop, indent=2)};\n"
         f"export const HEALTH_PROFILE = {json.dumps(health_profile, indent=2)};\n"
     )
+
+
+def publish_ios_export(parquet_dir: Path,
+                       events_dir: Optional[Path] = None,
+                       parquet_root: Optional[Path] = None,
+                       profile_path: Optional[Path] = None,
+                       outdir: Optional[Path] = None) -> None:
+    """Emit a single ios_bundle.json the iOS app reads via iCloud Drive."""
+    import datetime as _dt
+    if events_dir is None:    events_dir = parquet_dir.parent / "events"
+    if parquet_root is None:  parquet_root = parquet_dir.parent
+    if profile_path is None:  profile_path = Path("output/health_profile.json")
+    if outdir is None:        outdir = Path("output/ios_export")
+    outdir.mkdir(parents=True, exist_ok=True)
+    bundle = {
+        "exported_at": _dt.datetime.utcnow().isoformat() + "Z",
+        "vitals":      build_vitals(parquet_dir),
+        "workouts":    build_workouts(events_dir),
+        "action_loop": build_action_loop(parquet_root),
+        "profile":     load_health_profile(profile_path),
+        "genomics":    build_genomics_from_parquet(parquet_root / "findings"),
+    }
+    (outdir / "ios_bundle.json").write_text(json.dumps(bundle, indent=2))
 
 
 def _cli() -> None:
