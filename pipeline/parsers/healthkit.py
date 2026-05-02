@@ -124,3 +124,18 @@ def parse_to_parquet(xml_path: Path, outdir: Path) -> int:
         pq.write_table(table, outdir / f"healthkit-{partition}.parquet")
 
     return n_total
+
+
+def _cli() -> None:
+    import argparse
+    ap = argparse.ArgumentParser(description="Parse Apple HealthKit export.xml to Parquet.")
+    ap.add_argument("xml", type=Path, help="path to apple_health_export/export.xml")
+    ap.add_argument("--outdir", type=Path, default=Path("data/parquet/samples"),
+                    help="parquet output directory")
+    args = ap.parse_args()
+    n = parse_to_parquet(args.xml, args.outdir)
+    print(f"Wrote {n:,} samples to {args.outdir}/healthkit-*.parquet")
+
+
+if __name__ == "__main__":
+    _cli()
