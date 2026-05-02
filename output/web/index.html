@@ -31,6 +31,7 @@
         <li><button class="nav-btn" data-section="nutrition"  data-num="05">Nutrition</button></li>
         <li><button class="nav-btn" data-section="lifestyle"  data-num="06">Lifestyle</button></li>
         <li><button class="nav-btn" data-section="prs"        data-num="07">PRS</button></li>
+        <li><button class="nav-btn" data-section="vitals"     data-num="07a">Vitals</button></li>
       </ul>
     </nav>
 
@@ -164,6 +165,18 @@
       direction, amber = elevated direction, gray = neutral or low coverage.
     </p>
     <div class="prs-grid" id="prs-grid"></div>
+  </section>
+
+  <!-- Vitals (HealthKit) -->
+  <section class="section" id="vitals">
+    <p class="section-kicker">Longitudinal · HealthKit</p>
+    <h2 class="section-title">Vitals</h2>
+    <p class="section-lead">
+      Live time-series from your Apple Health export. Each chart is annotated
+      with the genotype-driven target where one applies. Hover any chart for the
+      most recent value and trend.
+    </p>
+    <div class="vitals-grid" id="vitals-grid"></div>
   </section>
 
   <!-- Cross-reference -->
