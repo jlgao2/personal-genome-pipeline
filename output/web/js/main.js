@@ -3,7 +3,7 @@
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
 } from './data.js';
-import { VITALS, WORKOUTS, ACTION_LOOP } from './data-vitals.js';
+import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE } from './data-vitals.js';
 import { VITAL_TARGETS } from './vitals-targets.js';
 
 /* ── Render hero stats ── */
@@ -144,6 +144,103 @@ function renderPRS() {
       </div>
     </article>
   `).join('');
+}
+
+/* ── Render Health Profile panel ── */
+function renderHealthProfile() {
+  const root = document.getElementById('profile-grid');
+  if (!root) return;
+  if (!HEALTH_PROFILE) {
+    root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No health profile loaded — drop one at <code>output/health_profile.json</code>.</p>';
+    return;
+  }
+  const subj = HEALTH_PROFILE.profile_metadata?.subject || {};
+  const vp = HEALTH_PROFILE.systemic_vulnerability_profile || {};
+  const conds = HEALTH_PROFILE.active_conditions || {};
+  const program = HEALTH_PROFILE.training_program || {};
+  const meds = HEALTH_PROFILE.medications_to_avoid || [];
+  const cur_meds = HEALTH_PROFILE.current_medications || [];
+  const plan = HEALTH_PROFILE.action_plan_immediate || [];
+
+  // Compute today's program day from Day 1=Monday
+  const dow = new Date().getDay();              // 0=Sun..6=Sat
+  const dayKey = `Day ${((dow + 6) % 7) + 1}`;  // Mon=Day 1
+  const todaysProgram = program[dayKey];
+
+  const cards = [];
+
+  cards.push(`
+    <article class="profile-card">
+      <div class="profile-card-name">Today · ${dayKey}</div>
+      <div class="profile-card-headline">${todaysProgram || '—'}</div>
+    </article>
+  `);
+
+  if (vp.core_pattern) {
+    cards.push(`
+      <article class="profile-card profile-card-warn">
+        <div class="profile-card-name">Vulnerability profile</div>
+        <div class="profile-card-headline">${vp.core_pattern}</div>
+        <div>${(vp.affected_sites_confirmed || []).map(s => `<span class="profile-pill" data-status="active">${s}</span>`).join('')}</div>
+      </article>
+    `);
+  }
+
+  const allConds = [
+    ...(conds.lower_extremity || []).map(c => ({ name: c, status: 'rehab' })),
+    ...(conds.upper_extremity || []).map(c => ({ name: c, status: 'rehab' })),
+  ];
+  if (allConds.length) {
+    cards.push(`
+      <article class="profile-card">
+        <div class="profile-card-name">Active conditions</div>
+        <div>${allConds.map(c => `<span class="profile-pill" data-status="${c.status}">${c.name}</span>`).join('')}</div>
+      </article>
+    `);
+  }
+
+  if (meds.length) {
+    cards.push(`
+      <article class="profile-card profile-card-warn">
+        <div class="profile-card-name">Avoid · prescriber alerts</div>
+        <ul class="profile-list">
+          ${meds.map(m => `<li><strong>${m.class}</strong> — ${m.reason}</li>`).join('')}
+        </ul>
+      </article>
+    `);
+  }
+
+  if (cur_meds.length) {
+    cards.push(`
+      <article class="profile-card">
+        <div class="profile-card-name">Current meds</div>
+        <div>${cur_meds.map(m => `<span class="profile-pill" data-status="active">${m}</span>`).join('')}</div>
+      </article>
+    `);
+  }
+
+  if (plan.length) {
+    cards.push(`
+      <article class="profile-card">
+        <div class="profile-card-name">This-week priorities</div>
+        <ul class="profile-list">
+          ${plan.map(p => `<li>${p}</li>`).join('')}
+        </ul>
+      </article>
+    `);
+  }
+
+  if (subj.body_composition_note) {
+    const goalNote = `${subj.age || 31} · ${subj.sex || 'M'} · 97kg → goal 90kg`;
+    cards.push(`
+      <article class="profile-card">
+        <div class="profile-card-name">Subject</div>
+        <div class="profile-card-headline">${goalNote}</div>
+      </article>
+    `);
+  }
+
+  root.innerHTML = cards.join('');
 }
 
 /* ── Render Action Loop (genome × measured × today) ── */
@@ -515,6 +612,7 @@ function wirePrint() {
 /* ── Boot ── */
 document.addEventListener('DOMContentLoaded', () => {
   renderStats();
+  renderHealthProfile();
   renderActionLoop();
   renderActions();
   renderFindingsBySection();

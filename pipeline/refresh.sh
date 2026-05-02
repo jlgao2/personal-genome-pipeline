@@ -86,8 +86,16 @@ if [[ -d "$RAW_FINDINGS_DIR" ]]; then
     fi
 fi
 
-# ── Cross-refs YAML → cross_refs.parquet ──
-if [[ -f "$CROSS_REFS_YAML" ]]; then
+# ── Cross-refs: auto-generate from health profile (if present) + merge YAML ──
+PROFILE_JSON="$DATA_ROOT/health_profile.json"
+[[ "$DATA_ROOT" == "data" ]] && PROFILE_JSON="output/health_profile.json"
+if [[ -f "$PROFILE_JSON" ]]; then
+    echo "Building cross_refs from health profile + YAML..."
+    python3 -m pipeline.parsers.health_profile \
+        --profile "$PROFILE_JSON" \
+        --yaml    "$CROSS_REFS_YAML" \
+        --out     "$PARQUET_ROOT/cross_refs/cross_refs.parquet"
+elif [[ -f "$CROSS_REFS_YAML" ]]; then
     python3 -m pipeline.parsers.cross_refs \
         --yaml "$CROSS_REFS_YAML" \
         --out  "$PARQUET_ROOT/cross_refs/cross_refs.parquet"

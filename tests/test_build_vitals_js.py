@@ -20,8 +20,13 @@ def test_write_vitals_js_emits_valid_es_module():
         assert content.startswith("/* AUTO-GENERATED")
         assert "export const VITALS" in content
 
-        # Extract the JSON literal after `=` and verify it parses.
-        match = re.search(r"export const VITALS\s*=\s*(\{.*\});", content, re.S)
+        # Extract the VITALS literal (terminated by '\nexport ' or EOF) and verify it parses.
+        match = re.search(r"export const VITALS\s*=\s*(\{.*?\});\s*\n(?=export |\Z)",
+                          content, re.S)
         assert match
         data = json.loads(match.group(1))
         assert "heart_rate_resting" in data
+        # Other exports should also be present.
+        assert "export const WORKOUTS" in content
+        assert "export const ACTION_LOOP" in content
+        assert "export const HEALTH_PROFILE" in content
