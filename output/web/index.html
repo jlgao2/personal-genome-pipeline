@@ -25,7 +25,11 @@
       <span class="rail-section-label">Findings</span>
       <ul class="nav-sections">
         <li><button class="nav-btn" data-section="health-profile" data-num="00">Profile</button></li>
+        <li><button class="nav-btn" data-section="today-session" data-num="00c">Today</button></li>
+        <li><button class="nav-btn" data-section="prep-checklist" data-num="00d">Prep</button></li>
         <li><button class="nav-btn" data-section="stack"        data-num="00b">Stack</button></li>
+        <li><button class="nav-btn" data-section="weekly-recap"  data-num="00e">Recap</button></li>
+        <li><button class="nav-btn" data-section="med-alerts"    data-num="00f">Med watch</button></li>
         <li><button class="nav-btn" data-section="action-loop" data-num="00a">Action Loop</button></li>
         <li><button class="nav-btn" data-section="actionable" data-num="01">Actionable</button></li>
         <li><button class="nav-btn" data-section="drugs"      data-num="02">Drugs (PGx)</button></li>
@@ -86,6 +90,43 @@
     <p class="section-kicker">Today · context</p>
     <h2 class="section-title">Health profile</h2>
     <div class="profile-grid" id="profile-grid"></div>
+  </section>
+
+  <!-- Today's Session — exercises + warmup + rehab -->
+  <section class="section" id="today-session">
+    <p class="section-kicker">Today · session</p>
+    <h2 class="section-title">Today's plan</h2>
+    <div class="session-grid" id="session-grid"></div>
+  </section>
+
+  <!-- Pre-workout checklist (interactive, localStorage) -->
+  <section class="section" id="prep-checklist">
+    <p class="section-kicker">Today · pre-workout</p>
+    <h2 class="section-title">Pre-flight check</h2>
+    <p class="section-lead">
+      Five-item checklist for the next session. Resets at midnight. State persists
+      in your browser (no backend, no cloud).
+    </p>
+    <ul class="prep-list" id="prep-list"></ul>
+  </section>
+
+  <!-- Pharmacovigilance — flag risky meds against tendon vulnerability -->
+  <section class="section" id="med-alerts">
+    <p class="section-kicker">Prescriber alerts</p>
+    <h2 class="section-title">Med watch</h2>
+    <p class="section-lead">
+      Any current medication that lands in your MyChart record gets cross-checked
+      against your <code>medications_to_avoid</code> list. Flagged items
+      mean: bring it up at your next visit, ask about alternatives.
+    </p>
+    <div class="med-alerts-list" id="med-alerts-list"></div>
+  </section>
+
+  <!-- Weekly recap (Sunday-only highlight, always rendered) -->
+  <section class="section" id="weekly-recap">
+    <p class="section-kicker">Last 7 days · vs prior 7</p>
+    <h2 class="section-title">Weekly recap</h2>
+    <div class="recap-grid" id="recap-grid"></div>
   </section>
 
   <!-- Supplement Stack — timing-grouped today -->

@@ -243,6 +243,238 @@ function renderHealthProfile() {
   root.innerHTML = cards.join('');
 }
 
+/* ── Render Today's Session (rehab + warmup + main + core) ── */
+function todaysProgramKey() {
+  const dow = new Date().getDay();
+  return `Day ${((dow + 6) % 7) + 1}`;
+}
+
+function renderTodaySession() {
+  const root = document.getElementById('session-grid');
+  if (!root) return;
+  const protocol = HEALTH_PROFILE && HEALTH_PROFILE.daily_protocol;
+  if (!protocol) {
+    root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No daily protocol loaded.</p>';
+    return;
+  }
+  const dayKey = todaysProgramKey();
+  const day = protocol[dayKey];
+  if (!day) {
+    root.innerHTML = `<p style="padding:1rem;">Unknown day key: ${dayKey}</p>`;
+    return;
+  }
+  const blocks = [];
+  blocks.push(`
+    <div class="session-summary">
+      <span class="day-tag">${dayKey}</span>${day.session}
+    </div>
+  `);
+  const order = [
+    ['Rehab',   day.rehab],
+    ['Warmup',  day.warmup],
+    ['Main',    day.main],
+    ['Core',    day.core],
+  ];
+  for (const [name, items] of order) {
+    if (!items || items.length === 0) {
+      if (dayKey === 'Day 7') continue;
+      blocks.push(`<article class="session-block empty"><div class="session-block-title">${name}</div><ul><li>—</li></ul></article>`);
+      continue;
+    }
+    blocks.push(`
+      <article class="session-block">
+        <div class="session-block-title">${name}</div>
+        <ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>
+      </article>
+    `);
+  }
+  root.innerHTML = blocks.join('');
+}
+
+/* ── Pre-workout checklist (interactive, persists in localStorage) ── */
+function renderPrepChecklist() {
+  const root = document.getElementById('prep-list');
+  if (!root) return;
+  const items = (HEALTH_PROFILE && HEALTH_PROFILE.prep_checklist_template) || [];
+  if (items.length === 0) {
+    root.innerHTML = '<li class="prep-item"><span class="prep-text">No checklist defined.</span></li>';
+    return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const storageKey = `prep_${today}`;
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { state = {}; }
+  root.innerHTML = items.map((label, i) => `
+    <li class="prep-item ${state[i] ? 'done' : ''}" data-idx="${i}">
+      <span class="prep-box"></span>
+      <span class="prep-text">${label}</span>
+    </li>
+  `).join('');
+  root.querySelectorAll('.prep-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = el.dataset.idx;
+      state[idx] = !state[idx];
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      el.classList.toggle('done', !!state[idx]);
+    });
+  });
+}
+
+/* ── Pharmacovigilance — flag risky meds ── */
+function renderMedAlerts() {
+  const root = document.getElementById('med-alerts-list');
+  if (!root) return;
+  const alerts = (HEALTH_PROFILE && HEALTH_PROFILE.medications_to_avoid) || [];
+  // Active medications come from HEALTH_PROFILE.current_medications (self-reported)
+  // PLUS WORKOUTS-style events that might come from FHIR with type='medication'.
+  // For now we cross-check the self-reported list (FHIR-sourced med events
+  // can be added later when MyChart bundle lands).
+  const current = (HEALTH_PROFILE && HEALTH_PROFILE.current_medications) || [];
+
+  const flagged = [];
+  for (const med of current) {
+    for (const a of alerts) {
+      const cls = (a.class || '').toLowerCase();
+      const m = med.toLowerCase();
+      // Crude string match on key fragments
+      const danger_terms = {
+        'fluoroquinolone': ['cipro', 'levaquin', 'levofloxacin', 'ciprofloxacin', 'moxifloxacin'],
+        'statin': ['statin', 'atorvastatin', 'rosuvastatin', 'simvastatin', 'pravastatin'],
+        'corticosteroid': ['prednisone', 'prednisolone', 'dexamethasone', 'methylprednisolone'],
+        'nsaid': ['ibuprofen', 'naproxen', 'diclofenac', 'celecoxib', 'meloxicam'],
+      };
+      for (const [k, terms] of Object.entries(danger_terms)) {
+        if (cls.includes(k) && terms.some(t => m.includes(t))) {
+          flagged.push({ med, reason: a.reason, severity: 'high' });
+        }
+      }
+    }
+  }
+
+  if (flagged.length === 0) {
+    root.innerHTML = `
+      <article class="med-alert">
+        <div class="med-alert-clear">No alerts</div>
+        <div class="med-alert-rationale">Your current medications (${current.length ? current.join(', ') : 'none on file'}) don't trigger any tendon-vulnerability flags.</div>
+      </article>
+      ${alerts.length ? `
+        <article class="med-alert" data-severity="medium">
+          <div class="med-alert-name">Heads-up — ${alerts.length} drug classes to mention to any new prescriber</div>
+          <div class="med-alert-rationale">${alerts.map(a => `<strong>${a.class}</strong> (${a.reason})`).join(' · ')}</div>
+        </article>
+      ` : ''}
+    `;
+    return;
+  }
+  root.innerHTML = flagged.map(f => `
+    <article class="med-alert" data-severity="${f.severity}">
+      <div>
+        <span class="med-alert-name">${f.med}</span>
+        <span class="med-alert-flag">⚠ flag</span>
+      </div>
+      <div class="med-alert-rationale">${f.reason}</div>
+    </article>
+  `).join('');
+}
+
+/* ── Weekly Recap (last 7 vs prior 7) ── */
+function renderWeeklyRecap() {
+  const root = document.getElementById('recap-grid');
+  if (!root) return;
+
+  const now = Date.now();
+  const day = 86_400_000;
+  const window7 = (start_offset, days) => {
+    const start = now - (start_offset + days) * day;
+    const end   = now - start_offset * day;
+    return [start, end];
+  };
+  const [last_start, last_end] = window7(0, 7);
+  const [prev_start, prev_end] = window7(7, 7);
+
+  const inWindow = (ts, start, end) => {
+    const t = new Date(ts).getTime();
+    return t >= start && t < end;
+  };
+
+  // RHR — average from VITALS.heart_rate_resting series
+  const rhr_series = (VITALS.heart_rate_resting && VITALS.heart_rate_resting.series) || [];
+  const rhr_in = (s, e) => {
+    const vs = rhr_series.filter(([d]) => inWindow(d, s, e)).map(([, v]) => v);
+    return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null;
+  };
+  const rhr_last = rhr_in(last_start, last_end);
+  const rhr_prev = rhr_in(prev_start, prev_end);
+
+  // Sleep — average from VITALS.sleep_minutes series
+  const sleep_series = (VITALS.sleep_minutes && VITALS.sleep_minutes.series) || [];
+  const sleep_in = (s, e) => {
+    const vs = sleep_series.filter(([d]) => inWindow(d, s, e)).map(([, v]) => v);
+    return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null;
+  };
+  const sleep_last = sleep_in(last_start, last_end);
+  const sleep_prev = sleep_in(prev_start, prev_end);
+
+  // Workouts — count from WORKOUTS in window
+  const wout_in = (s, e) => WORKOUTS.filter(w => inWindow(w.ts_start, s, e)).length;
+  const wout_last = wout_in(last_start, last_end);
+  const wout_prev = wout_in(prev_start, prev_end);
+
+  // Total training load
+  const tl_in = (s, e) => WORKOUTS
+    .filter(w => inWindow(w.ts_start, s, e))
+    .reduce((sum, w) => sum + (w.training_load || 0), 0);
+  const tl_last = tl_in(last_start, last_end);
+  const tl_prev = tl_in(prev_start, prev_end);
+
+  const cells = [
+    {
+      name: 'Sleep avg', unit: 'min',
+      curr: sleep_last, prev: sleep_prev,
+      better: 'higher',
+    },
+    {
+      name: 'Resting HR', unit: 'bpm',
+      curr: rhr_last, prev: rhr_prev,
+      better: 'lower',
+    },
+    {
+      name: 'Workouts',  unit: '',
+      curr: wout_last, prev: wout_prev,
+      better: 'higher',
+    },
+    {
+      name: 'Training load', unit: '',
+      curr: tl_last, prev: tl_prev,
+      better: 'higher',
+    },
+  ];
+
+  root.innerHTML = cells.map(c => {
+    let trend = 'same';
+    let delta_text = '—';
+    if (c.curr != null && c.prev != null) {
+      const diff = c.curr - c.prev;
+      const dpct = c.prev !== 0 ? (diff / c.prev) * 100 : 0;
+      if (Math.abs(dpct) < 3) trend = 'same';
+      else {
+        const positive_delta = (c.better === 'higher' && diff > 0) || (c.better === 'lower' && diff < 0);
+        trend = positive_delta ? 'better' : 'worse';
+      }
+      const sign = diff > 0 ? '+' : '';
+      delta_text = `${sign}${diff.toFixed(c.name === 'Workouts' ? 0 : 1)} vs prior 7d`;
+    }
+    const value = c.curr == null ? '—' : c.curr.toFixed(c.name === 'Workouts' ? 0 : 1);
+    return `
+      <article class="recap-cell">
+        <div class="recap-cell-name">${c.name}</div>
+        <div class="recap-cell-value">${value}<span style="font-size:0.5em; margin-left:0.3em; color:var(--fg-mute);">${c.unit}</span></div>
+        <div class="recap-cell-delta" data-trend="${trend}">${delta_text}</div>
+      </article>
+    `;
+  }).join('');
+}
+
 /* ── Render Supplement Stack ── */
 const TIMING_ORDER = ['morning', '30-60 min pre-workout', 'with lunch', 'afternoon', 'evening', 'before bed'];
 const TIMING_LABELS = {
@@ -666,7 +898,11 @@ function wirePrint() {
 document.addEventListener('DOMContentLoaded', () => {
   renderStats();
   renderHealthProfile();
+  renderTodaySession();
+  renderPrepChecklist();
   renderStack();
+  renderWeeklyRecap();
+  renderMedAlerts();
   renderActionLoop();
   renderActions();
   renderFindingsBySection();
