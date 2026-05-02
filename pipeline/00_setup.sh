@@ -68,7 +68,7 @@ fi
 # 3. Python deps for the pipeline scripts
 echo ""
 echo "[3/5] Python packages"
-pip3 install --quiet pandas numpy pysam myvariant cyvcf2 requests 2>&1 | tail -3 || true
+pip3 install --quiet pandas numpy pysam myvariant cyvcf2 requests duckdb pyarrow 2>&1 | tail -3 || true
 echo "  ✓ Python deps installed"
 
 # 4. PharmCAT
