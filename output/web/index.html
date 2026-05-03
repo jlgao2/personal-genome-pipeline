@@ -22,34 +22,36 @@
     </div>
 
     <nav class="rail-tabs">
-      <button class="tab-btn is-active" data-tab="today">
-        <span class="tab-num">01</span><span class="tab-name">Today</span>
+      <button class="tab-btn is-active" data-tab="interventions">
+        <span class="tab-num">01</span><span class="tab-name">Interventions</span>
       </button>
-      <button class="tab-btn" data-tab="trends">
-        <span class="tab-num">02</span><span class="tab-name">Trends</span>
+      <button class="tab-btn" data-tab="plan">
+        <span class="tab-num">02</span><span class="tab-name">Plan</span>
       </button>
       <button class="tab-btn" data-tab="profile">
         <span class="tab-num">03</span><span class="tab-name">Profile</span>
       </button>
-      <button class="tab-btn" data-tab="genome">
-        <span class="tab-num">04</span><span class="tab-name">Genome</span>
-      </button>
     </nav>
 
-    <nav class="rail-section" data-tab-children="today">
+    <nav class="rail-section" data-tab-children="interventions">
       <span class="rail-section-label">Today</span>
       <ul class="nav-sections">
         <li><button class="nav-btn" data-section="hero-card"      data-num="·">Now</button></li>
-        <li><button class="nav-btn" data-section="action-loop"    data-num="·">Action Loop</button></li>
         <li><button class="nav-btn" data-section="today-session"  data-num="·">Session</button></li>
+        <li><button class="nav-btn" data-section="action-loop"    data-num="·">Action Loop</button></li>
         <li><button class="nav-btn" data-section="prep-checklist" data-num="·">Prep</button></li>
         <li><button class="nav-btn" data-section="stack"          data-num="·">Stack</button></li>
+        <li><button class="nav-btn" data-section="med-alerts"     data-num="·">Med alerts</button></li>
       </ul>
     </nav>
 
-    <nav class="rail-section" data-tab-children="trends" hidden>
-      <span class="rail-section-label">Trends</span>
+    <nav class="rail-section" data-tab-children="plan" hidden>
+      <span class="rail-section-label">Plan & Vision</span>
       <ul class="nav-sections">
+        <li><button class="nav-btn" data-section="vision"         data-num="·">Vision</button></li>
+        <li><button class="nav-btn" data-section="goals"          data-num="·">Goals</button></li>
+        <li><button class="nav-btn" data-section="roadmap"        data-num="·">Roadmap</button></li>
+        <li><button class="nav-btn" data-section="streak"         data-num="·">Streak</button></li>
         <li><button class="nav-btn" data-section="weekly-recap"   data-num="·">Recap</button></li>
         <li><button class="nav-btn" data-section="vitals"         data-num="·">Vitals</button></li>
         <li><button class="nav-btn" data-section="workouts"       data-num="·">Workouts</button></li>
@@ -57,16 +59,10 @@
     </nav>
 
     <nav class="rail-section" data-tab-children="profile" hidden>
-      <span class="rail-section-label">Profile</span>
+      <span class="rail-section-label">Profile · fixed</span>
       <ul class="nav-sections">
-        <li><button class="nav-btn" data-section="health-profile" data-num="·">Health profile</button></li>
-        <li><button class="nav-btn" data-section="med-alerts"     data-num="·">Med watch</button></li>
-      </ul>
-    </nav>
-
-    <nav class="rail-section" data-tab-children="genome" hidden>
-      <span class="rail-section-label">Genome</span>
-      <ul class="nav-sections">
+        <li><button class="nav-btn" data-section="health-profile" data-num="·">Profile</button></li>
+        <li><button class="nav-btn" data-section="med-reference"  data-num="·">Avoid list</button></li>
         <li><button class="nav-btn" data-section="actionable" data-num="01">Actionable</button></li>
         <li><button class="nav-btn" data-section="drugs"      data-num="02">Drugs (PGx)</button></li>
         <li><button class="nav-btn" data-section="cardio"     data-num="03">Cardiology</button></li>
@@ -116,12 +112,12 @@
   <!-- TODAY tab -->
 
   <!-- Hero card — most-actionable thing right now -->
-  <section class="section" id="hero-card" data-tab="today">
+  <section class="section" id="hero-card" data-tab="interventions">
     <div class="hero-card" id="hero-card-body"></div>
   </section>
 
   <!-- Action Loop — genome × measured signal × today's gap -->
-  <section class="section" id="action-loop" data-tab="today">
+  <section class="section" id="action-loop" data-tab="interventions">
     <p class="section-kicker">Genome × measured · today</p>
     <h2 class="section-title">Action Loop</h2>
     <p class="section-lead">
@@ -133,36 +129,78 @@
   </section>
 
   <!-- Today's Session — exercises + warmup + rehab -->
-  <section class="section" id="today-session" data-tab="today">
+  <section class="section" id="today-session" data-tab="interventions">
     <p class="section-kicker">Today · session</p>
     <h2 class="section-title">Session <span id="session-adherence"></span></h2>
     <div class="session-grid" id="session-grid"></div>
   </section>
 
   <!-- Pre-workout checklist (interactive, localStorage) -->
-  <section class="section" id="prep-checklist" data-tab="today">
+  <section class="section" id="prep-checklist" data-tab="interventions">
     <p class="section-kicker">Today · pre-workout</p>
     <h2 class="section-title">Pre-flight check</h2>
     <ul class="prep-list" id="prep-list"></ul>
   </section>
 
   <!-- Supplement Stack — timing-grouped today -->
-  <section class="section" id="stack" data-tab="today">
+  <section class="section" id="stack" data-tab="interventions">
     <p class="section-kicker">Today · supplement protocol</p>
     <h2 class="section-title">Stack</h2>
     <div class="stack-grid" id="stack-grid"></div>
   </section>
 
-  <!-- TRENDS tab -->
+  <!-- PLAN & VISION tab -->
+
+  <!-- Vision statement -->
+  <section class="section" id="vision" data-tab="plan">
+    <p class="section-kicker">North star</p>
+    <h2 class="section-title">Vision</h2>
+    <blockquote class="vision-statement" id="vision-statement"></blockquote>
+  </section>
+
+  <!-- Goals with progress bars -->
+  <section class="section" id="goals" data-tab="plan">
+    <p class="section-kicker">Targets · with deadlines</p>
+    <h2 class="section-title">Goals</h2>
+    <div class="goals-list" id="goals-list"></div>
+  </section>
+
+  <!-- Block roadmap (responsive: timeline on desktop, sections on mobile) -->
+  <section class="section" id="roadmap" data-tab="plan">
+    <p class="section-kicker">Now → 8w → 3mo → ongoing</p>
+    <h2 class="section-title">Roadmap</h2>
+    <div class="roadmap" id="roadmap-grid"></div>
+  </section>
+
+  <!-- Streak / contribution graph -->
+  <section class="section" id="streak" data-tab="plan">
+    <p class="section-kicker">Last 12 weeks · sleep + workouts</p>
+    <h2 class="section-title">Streak</h2>
+    <div class="streak-graph" id="streak-graph"></div>
+  </section>
 
   <!-- Weekly recap (always rendered) -->
-  <section class="section" id="weekly-recap" data-tab="trends">
+  <section class="section" id="weekly-recap" data-tab="plan">
     <p class="section-kicker">Last 7 days · vs prior 7</p>
     <h2 class="section-title">Weekly recap</h2>
     <div class="recap-grid" id="recap-grid"></div>
   </section>
 
   <!-- PROFILE tab -->
+
+  <!-- PROFILE tab — fixed variables -->
+
+  <!-- Med reference list (drug classes to avoid; the *firing* alerts live in Interventions) -->
+  <section class="section" id="med-reference" data-tab="profile">
+    <p class="section-kicker">Reference · prescriber alerts</p>
+    <h2 class="section-title">Drugs to avoid / discuss</h2>
+    <p class="section-lead">
+      Static reference: drug classes flagged by your tendon-vulnerability profile.
+      Mention these to any new prescriber. Live alerts (when a current med matches)
+      live in the Interventions tab.
+    </p>
+    <ul class="med-reference-list" id="med-reference-list"></ul>
+  </section>
 
   <!-- Health Profile -->
   <section class="section" id="health-profile" data-tab="profile">
@@ -172,7 +210,7 @@
   </section>
 
   <!-- Pharmacovigilance — flag risky meds -->
-  <section class="section" id="med-alerts" data-tab="profile">
+  <section class="section" id="med-alerts" data-tab="interventions">
     <p class="section-kicker">Prescriber alerts</p>
     <h2 class="section-title">Med watch</h2>
     <p class="section-lead">
@@ -183,7 +221,7 @@
   </section>
 
   <!-- Actionable -->
-  <section class="section" id="actionable" data-tab="genome" data-findings-section>
+  <section class="section" id="actionable" data-tab="profile" data-findings-section>
     <p class="section-kicker">Top of report</p>
     <h2 class="section-title">Actionable findings</h2>
     <p class="section-lead">
@@ -194,7 +232,7 @@
   </section>
 
   <!-- Drugs -->
-  <section class="section" id="drugs" data-tab="genome" data-findings-section>
+  <section class="section" id="drugs" data-tab="profile" data-findings-section>
     <p class="section-kicker">Pharmacogenomics</p>
     <h2 class="section-title">Drugs to flag</h2>
     <p class="section-lead">
@@ -215,7 +253,7 @@
   </section>
 
   <!-- Cardiology -->
-  <section class="section" id="cardio" data-tab="genome" data-findings-section>
+  <section class="section" id="cardio" data-tab="profile" data-findings-section>
     <p class="section-kicker">Cardiovascular risk</p>
     <h2 class="section-title">Cardiology</h2>
     <p class="section-lead">
@@ -227,7 +265,7 @@
   </section>
 
   <!-- Carrier -->
-  <section class="section" id="carrier" data-tab="genome" data-findings-section>
+  <section class="section" id="carrier" data-tab="profile" data-findings-section>
     <p class="section-kicker">Recessive disease carrier status</p>
     <h2 class="section-title">Carrier</h2>
     <p class="section-lead">
@@ -238,7 +276,7 @@
   </section>
 
   <!-- Nutrition -->
-  <section class="section" id="nutrition" data-tab="genome" data-findings-section>
+  <section class="section" id="nutrition" data-tab="profile" data-findings-section>
     <p class="section-kicker">Nutrition &amp; metabolism</p>
     <h2 class="section-title">Nutrition</h2>
     <p class="section-lead">
@@ -249,7 +287,7 @@
   </section>
 
   <!-- Lifestyle -->
-  <section class="section" id="lifestyle" data-tab="genome" data-findings-section>
+  <section class="section" id="lifestyle" data-tab="profile" data-findings-section>
     <p class="section-kicker">Behavior, exercise, sleep</p>
     <h2 class="section-title">Lifestyle</h2>
     <p class="section-lead">
@@ -260,7 +298,7 @@
   </section>
 
   <!-- PRS -->
-  <section class="section" id="prs" data-tab="genome">
+  <section class="section" id="prs" data-tab="profile">
     <p class="section-kicker">Polygenic risk scores</p>
     <h2 class="section-title">PRS</h2>
     <p class="section-lead">
@@ -273,7 +311,7 @@
   </section>
 
   <!-- Vitals (HealthKit) -->
-  <section class="section" id="vitals" data-tab="trends">
+  <section class="section" id="vitals" data-tab="plan">
     <p class="section-kicker">Longitudinal · HealthKit</p>
     <h2 class="section-title">Vitals</h2>
     <p class="section-lead">
@@ -285,7 +323,7 @@
   </section>
 
   <!-- Workouts (Garmin activities) -->
-  <section class="section" id="workouts" data-tab="trends">
+  <section class="section" id="workouts" data-tab="plan">
     <p class="section-kicker">Garmin · last 90 activities</p>
     <h2 class="section-title">Workouts</h2>
     <p class="section-lead">
@@ -297,7 +335,7 @@
   </section>
 
   <!-- Cross-reference -->
-  <section class="section" id="crossref" data-tab="genome">
+  <section class="section" id="crossref" data-tab="profile">
     <p class="section-kicker">Genotype × medical record</p>
     <h2 class="section-title">Clinical convergences</h2>
     <p class="section-lead">
@@ -375,7 +413,7 @@
   </section>
 
   <!-- Reassuring -->
-  <section class="section" id="reassuring" data-tab="genome" data-findings-section>
+  <section class="section" id="reassuring" data-tab="profile" data-findings-section>
     <p class="section-kicker">Common alleles you don't carry</p>
     <h2 class="section-title">Reassuring</h2>
     <p class="section-lead">
@@ -386,7 +424,7 @@
   </section>
 
   <!-- Limits -->
-  <section class="section" id="limits" data-tab="genome" data-findings-section>
+  <section class="section" id="limits" data-tab="profile" data-findings-section>
     <p class="section-kicker">What this analysis can't tell you</p>
     <h2 class="section-title">Limits</h2>
     <p class="section-lead">

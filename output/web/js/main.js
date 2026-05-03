@@ -610,12 +610,11 @@ function actionState(latest, target, dir) {
   return 'off';
 }
 
-/* ── Hero card — most-actionable thing right now ── */
+/* ── Hero strip — ONE sentence, tap to expand ── */
 function renderHeroCard() {
   const root = document.getElementById('hero-card-body');
   if (!root) return;
 
-  // Pick the most-regressed action loop card (off > drift > ok > none)
   const stateRank = { 'off': 0, 'drift': 1, 'ok': 2, 'none': 3 };
   const sorted = (ACTION_LOOP || []).map(c => ({
     card: c,
@@ -623,38 +622,42 @@ function renderHeroCard() {
   })).sort((a, b) => stateRank[a.state] - stateRank[b.state]);
   const worst = sorted[0];
 
-  // If nothing's actionable, fall back to today's prescription
+  let sentence, detail, state;
   if (!worst || worst.state === 'ok' || worst.state === 'none') {
-    const dow = new Date().getDay();
-    const dayKey = `Day ${((dow + 6) % 7) + 1}`;
+    const dayKey = todaysProgramKey();
     const session = HEALTH_PROFILE?.daily_protocol?.[dayKey]?.session || '—';
-    root.innerHTML = `
-      <span class="hero-card-eyebrow">All clear · today's focus</span>
-      <h2 class="hero-card-title">${session}</h2>
-      <p class="hero-card-detail">No vitals are off-target right now. Stay consistent with the prescribed program.</p>
-      <div class="hero-card-cta"><a href="#today-session">View session</a></div>
-    `;
-    root.parentElement.querySelector('.hero-card')?.setAttribute('data-state', 'ok');
-    return;
+    sentence = `All clear. Today: ${session}.`;
+    detail = 'No vitals off-target. Adhere to the prescribed program.';
+    state = 'ok';
+  } else {
+    const c = worst.card;
+    const label = SAMPLE_TYPE_LABELS[c.sample_type] || c.sample_type;
+    const unit = SAMPLE_TYPE_UNITS[c.sample_type] || '';
+    const actual = c.latest_value != null ? `${c.latest_value.toFixed(1)} ${unit}`.trim() : '—';
+    const target = c.target_value != null ? `${c.target_value} ${unit}`.trim() : '?';
+    const verb = c.expected_direction === 'increase' ? '<' : '≥';
+    sentence = `${c.gene || 'PRS'}: ${label} ${actual} (target ${verb} ${target}).`;
+    detail = c.takeaway || c.finding_summary || '';
+    state = worst.state === 'off' ? 'warn' : 'drift';
   }
 
-  // Otherwise hero the worst-regressed card
-  const c = worst.card;
-  const label = SAMPLE_TYPE_LABELS[c.sample_type] || c.sample_type;
-  const unit = SAMPLE_TYPE_UNITS[c.sample_type] || '';
-  const actual = c.latest_value != null ? `${c.latest_value.toFixed(1)} ${unit}`.trim() : '—';
-  const target = c.target_value != null ? `${c.target_value} ${unit}`.trim() : '?';
-  const verb = c.expected_direction === 'increase' ? 'above' : 'below';
   root.innerHTML = `
-    <span class="hero-card-eyebrow">Most off-target · ${c.gene || 'PRS'}</span>
-    <h2 class="hero-card-title">${label}: ${actual} · target ${verb} ${target}</h2>
-    <p class="hero-card-detail">${c.takeaway || c.finding_summary || ''}</p>
-    <div class="hero-card-cta">
-      <a href="#action-loop">View Action Loop</a>
+    <button class="hero-strip" data-state="${state}" aria-expanded="false">
+      <span class="hero-strip-eyebrow">NOW</span>
+      <span class="hero-strip-sentence">${sentence}</span>
+      <span class="hero-strip-toggle">▾</span>
+    </button>
+    <div class="hero-strip-detail" hidden>
+      <p>${detail}</p>
     </div>
   `;
-  const card = document.getElementById('hero-card');
-  card.querySelector('.hero-card')?.setAttribute('data-state', worst.state === 'off' ? 'warn' : 'drift');
+  const btn = root.querySelector('.hero-strip');
+  const det = root.querySelector('.hero-strip-detail');
+  btn?.addEventListener('click', () => {
+    const isOpen = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', String(!isOpen));
+    det.hidden = isOpen;
+  });
 }
 
 /* ── Adherence chip — did Garmin record a session matching today's prescription? ── */
@@ -704,6 +707,153 @@ function renderAdherenceChip() {
   }
 }
 
+/* ── Vision statement (hand-authored) ── */
+function renderVision() {
+  const root = document.getElementById('vision-statement');
+  if (!root) return;
+  const s = HEALTH_PROFILE?.vision_statement;
+  if (!s) {
+    root.innerHTML = '<em style="color:var(--fg-dim);">Add a vision_statement field to health_profile.json.</em>';
+    return;
+  }
+  root.textContent = s;
+}
+
+/* ── Goals with progress bars ── */
+function renderGoals() {
+  const root = document.getElementById('goals-list');
+  if (!root) return;
+  const goals = HEALTH_PROFILE?.goals || [];
+  if (goals.length === 0) {
+    root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No goals defined yet — add a goals[] array to health_profile.json.</p>';
+    return;
+  }
+  const today = new Date();
+  root.innerHTML = goals.map(g => {
+    let pct = 0;
+    let state = 'pending';
+    if (g.current != null && g.baseline != null && g.target != null) {
+      const total = g.target - g.baseline;
+      const done = g.current - g.baseline;
+      pct = total !== 0 ? Math.max(0, Math.min(100, (done / total) * 100)) : 0;
+      // Time check: are we ahead/behind the linear schedule?
+      if (g.deadline) {
+        const start = new Date('2026-05-01').getTime();  // approximate start
+        const end = new Date(g.deadline).getTime();
+        if (end > start) {
+          const elapsed = (today.getTime() - start) / (end - start);
+          const expectedPct = elapsed * 100;
+          if (pct >= expectedPct) state = 'ahead';
+          else if (pct < expectedPct - 15) state = 'behind';
+          else state = 'pending';
+        }
+      }
+    }
+    const dl = g.deadline ? new Date(g.deadline).toLocaleDateString('en-US', {month:'short', year:'2-digit'}) : '—';
+    const cur = g.current != null ? `${g.current}` : '—';
+    const tgt = g.target != null ? `${g.target}` : '—';
+    return `
+      <div class="goal-row">
+        <div class="goal-name">${g.name}</div>
+        <div class="goal-meta">${cur} → ${tgt} ${g.units || ''} · by ${dl}</div>
+        <div class="goal-bar"><div class="goal-bar-fill" data-state="${state}" style="width:${pct.toFixed(0)}%"></div></div>
+        <div class="goal-detail">${g.note || ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ── Roadmap (responsive: timeline desktop, sections mobile) ── */
+function renderRoadmap() {
+  const root = document.getElementById('roadmap-grid');
+  if (!root) return;
+  const blocks = [
+    { tick: '0',     title: 'Now · this week',  items: HEALTH_PROFILE?.action_plan_immediate || [] },
+    { tick: '4-8w',  title: 'Block 2 · 4-8w',   items: HEALTH_PROFILE?.action_plan_short_term_4_to_8_weeks || [] },
+    { tick: '2-3mo', title: 'Block 3 · 2-3mo',  items: HEALTH_PROFILE?.action_plan_medium_term_2_to_3_months || [] },
+    { tick: '∞',     title: 'Ongoing',          items: HEALTH_PROFILE?.action_plan_ongoing || [] },
+  ];
+  root.innerHTML = blocks.map(b => `
+    <article class="roadmap-block">
+      <span class="roadmap-block-tick">${b.tick}</span>
+      <span class="roadmap-block-title">${b.title}</span>
+      <ul>${b.items.length ? b.items.map(i => `<li>${i}</li>`).join('') : '<li style="opacity:0.5;">—</li>'}</ul>
+    </article>
+  `).join('');
+}
+
+/* ── Streak / contribution graph (last 12 weeks: sleep + workouts) ── */
+function renderStreak() {
+  const root = document.getElementById('streak-graph');
+  if (!root) return;
+
+  const now = new Date();
+  const days = 84; // 12 weeks
+  const cells = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    cells.push(d);
+  }
+  const dKey = d => d.toISOString().slice(0, 10);
+
+  // Sleep: green if ≥420 min (7h), partial if 360-420, miss if <360, future if no data.
+  const sleepSeries = (VITALS.sleep_minutes && VITALS.sleep_minutes.series) || [];
+  const sleepMap = Object.fromEntries(sleepSeries.map(([d, v]) => [d, v]));
+  const sleepRow = cells.map(d => {
+    const v = sleepMap[dKey(d)];
+    if (v == null) return 'future';
+    if (v >= 420) return 'hit';
+    if (v >= 360) return 'partial';
+    return 'miss';
+  });
+
+  // Workouts: hit if ≥1 workout that day, miss if Day 7 (rest) green by default.
+  const workoutSet = new Set((WORKOUTS || []).map(w => (w.ts_start || '').slice(0, 10)));
+  const workoutRow = cells.map(d => {
+    const dayNum = ((d.getDay() + 6) % 7) + 1;  // Mon=1..Sun=7
+    if (dayNum === 7) return 'hit';  // rest day = expected
+    return workoutSet.has(dKey(d)) ? 'hit' : 'miss';
+  });
+
+  const cellHTML = states => states.map(s =>
+    `<div class="streak-cell" data-state="${s}"></div>`
+  ).join('');
+
+  root.innerHTML = `
+    <div class="streak-row">
+      <span class="streak-row-label">Sleep ≥7h</span>
+      <div class="streak-cells">${cellHTML(sleepRow)}</div>
+    </div>
+    <div class="streak-row">
+      <span class="streak-row-label">Workout</span>
+      <div class="streak-cells">${cellHTML(workoutRow)}</div>
+    </div>
+    <div class="streak-legend">
+      <span class="lg-hit">hit</span>
+      <span class="lg-partial">partial</span>
+      <span class="lg-miss">miss</span>
+    </div>
+  `;
+}
+
+/* ── Med reference list (avoid drugs — static) ── */
+function renderMedReference() {
+  const root = document.getElementById('med-reference-list');
+  if (!root) return;
+  const refs = HEALTH_PROFILE?.medications_to_avoid || [];
+  if (refs.length === 0) {
+    root.innerHTML = '<li>No reference list configured.</li>';
+    return;
+  }
+  root.innerHTML = refs.map(r => `
+    <li>
+      <span class="ref-class">${r.class}</span>
+      <span class="ref-reason">${r.reason}</span>
+    </li>
+  `).join('');
+}
+
 /* ── Tab switching ── */
 function wireTabs() {
   const setTab = (tabName) => {
@@ -722,8 +872,8 @@ function wireTabs() {
     btn.addEventListener('click', () => setTab(btn.dataset.tab));
   });
 
-  // Default to TODAY
-  setTab('today');
+  // Default to Interventions
+  setTab('interventions');
 }
 
 function renderActionLoop() {
@@ -1047,21 +1197,25 @@ function wirePrint() {
 /* ── Boot ── */
 document.addEventListener('DOMContentLoaded', () => {
   renderStats();
-  // TODAY tab
-  renderActionLoop();        // builds the data the hero card needs
-  renderHeroCard();          // depends on ACTION_LOOP states
+  // INTERVENTIONS tab
+  renderActionLoop();
+  renderHeroCard();
   renderTodaySession();
   renderAdherenceChip();
   renderPrepChecklist();
   renderStack();
-  // TRENDS tab
+  renderMedAlerts();
+  // PLAN tab
+  renderVision();
+  renderGoals();
+  renderRoadmap();
+  renderStreak();
   renderWeeklyRecap();
   renderVitals();
   renderWorkouts();
   // PROFILE tab
+  renderMedReference();
   renderHealthProfile();
-  renderMedAlerts();
-  // GENOME tab (existing)
   renderActions();
   renderFindingsBySection();
   renderPRS();
