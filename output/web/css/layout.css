@@ -2020,3 +2020,69 @@ body[data-active-tab="genome"]  .section[data-tab]:not([data-tab="genome"]) {
   margin: 0;
   line-height: 1.5;
 }
+
+/* ── Social: reach-out + birthdays ── */
+.reach-out-list, .birthdays-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.reach-out-row, .birthday-row {
+  background: var(--bg-card);
+  padding: 0.85rem 1.1rem 1rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.4rem 1rem;
+  align-items: baseline;
+}
+.reach-out-row .ro-name, .birthday-row .bd-name {
+  grid-column: 1;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--fg);
+}
+.reach-out-row .ro-attention, .birthday-row .bd-when {
+  grid-column: 2;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.reach-out-row .ro-attention[data-tier="high"]   { color: var(--warn); }
+.reach-out-row .ro-attention[data-tier="medium"] { color: var(--accent); }
+.reach-out-row .ro-attention[data-tier="low"]    { color: var(--fg-mute); }
+.reach-out-row .ro-since {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.reach-out-row .ro-about {
+  grid-column: 1 / -1;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--fg-dim);
+  line-height: 1.4;
+}
+.reach-out-row .ro-excerpt {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--fg-mute);
+  font-style: italic;
+}
+.birthday-row .bd-detail {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}

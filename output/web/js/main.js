@@ -3,7 +3,7 @@
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
 } from './data.js';
-import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS, ADAPTED_SESSION } from './data-vitals.js';
+import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS, ADAPTED_SESSION, SOCIAL } from './data-vitals.js';
 import { VITAL_TARGETS } from './vitals-targets.js';
 
 /* ── Render hero stats ── */
@@ -854,6 +854,62 @@ function renderMedReference() {
   `).join('');
 }
 
+/* ── Social: Reach Out + Birthdays ── */
+function attentionTier(score) {
+  if (score == null) return 'low';
+  if (score >= 60) return 'high';
+  if (score >= 30) return 'medium';
+  return 'low';
+}
+
+function renderReachOut() {
+  const root = document.getElementById('reach-out-list');
+  if (!root) return;
+  const rows = (SOCIAL && SOCIAL.reach_out) || [];
+  if (rows.length === 0) {
+    root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No social data — run <code>refresh.sh</code> with the social-media-graph repo present.</p>';
+    return;
+  }
+  root.innerHTML = rows.map(p => {
+    const tier = attentionTier(p.attention_score);
+    const since = p.days_since_last != null
+      ? `${p.days_since_last}d since last (${p.last_msg_from || '?'})`
+      : '—';
+    return `
+      <article class="reach-out-row">
+        <div class="ro-name">${p.name || '(unknown)'}</div>
+        <div class="ro-attention" data-tier="${tier}">attn ${p.attention_score ?? '—'}</div>
+        <div class="ro-since">${since}</div>
+        ${p.about_what ? `<div class="ro-about">${p.about_what}</div>` : ''}
+        ${p.last_excerpt ? `<div class="ro-excerpt">"${p.last_excerpt}"</div>` : ''}
+      </article>
+    `;
+  }).join('');
+}
+
+function renderBirthdays() {
+  const root = document.getElementById('birthdays-list');
+  if (!root) return;
+  const rows = (SOCIAL && SOCIAL.birthdays) || [];
+  if (rows.length === 0) {
+    root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No birthdays in next 60 days.</p>';
+    return;
+  }
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  root.innerHTML = rows.map(b => {
+    const dateStr = (b.month && b.day) ? `${monthNames[b.month-1]} ${b.day}` : '—';
+    const days = b.days_until != null ? `in ${b.days_until}d` : '';
+    const yk = b.year_known ? '' : '· year unknown';
+    return `
+      <article class="birthday-row">
+        <div class="bd-name">${b.name || '(unknown)'}</div>
+        <div class="bd-when">${dateStr} · ${days}</div>
+        <div class="bd-detail">${yk}</div>
+      </article>
+    `;
+  }).join('');
+}
+
 /* ── Tab switching ── */
 function wireTabs() {
   const setTab = (tabName) => {
@@ -1222,6 +1278,9 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCrossRef();
   renderLabs();
   renderAgenda();
+  // SOCIAL tab
+  renderReachOut();
+  renderBirthdays();
   // Tab switching + utilities
   wireTabs();
   wireFilters();

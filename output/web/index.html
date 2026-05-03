@@ -31,6 +31,9 @@
       <button class="tab-btn" data-tab="profile">
         <span class="tab-num">03</span><span class="tab-name">Profile</span>
       </button>
+      <button class="tab-btn" data-tab="social">
+        <span class="tab-num">04</span><span class="tab-name">Social</span>
+      </button>
     </nav>
 
     <nav class="rail-section" data-tab-children="interventions">
@@ -55,6 +58,14 @@
         <li><button class="nav-btn" data-section="weekly-recap"   data-num="·">Recap</button></li>
         <li><button class="nav-btn" data-section="vitals"         data-num="·">Vitals</button></li>
         <li><button class="nav-btn" data-section="workouts"       data-num="·">Workouts</button></li>
+      </ul>
+    </nav>
+
+    <nav class="rail-section" data-tab-children="social" hidden>
+      <span class="rail-section-label">Social</span>
+      <ul class="nav-sections">
+        <li><button class="nav-btn" data-section="reach-out"   data-num="·">Reach out</button></li>
+        <li><button class="nav-btn" data-section="birthdays"   data-num="·">Birthdays</button></li>
       </ul>
     </nav>
 
@@ -187,6 +198,25 @@
   </section>
 
   <!-- PROFILE tab -->
+
+  <!-- SOCIAL tab -->
+
+  <section class="section" id="reach-out" data-tab="social">
+    <p class="section-kicker">People · sorted by attention need</p>
+    <h2 class="section-title">Reach out</h2>
+    <p class="section-lead">
+      From your social-media-graph aggregates. Each person's attention score
+      (0-100) factors days_since_last, intimacy signal, and reciprocity.
+      Higher = longer overdue.
+    </p>
+    <div class="reach-out-list" id="reach-out-list"></div>
+  </section>
+
+  <section class="section" id="birthdays" data-tab="social">
+    <p class="section-kicker">Next 60 days</p>
+    <h2 class="section-title">Birthdays</h2>
+    <div class="birthdays-list" id="birthdays-list"></div>
+  </section>
 
   <!-- PROFILE tab — fixed variables -->
 

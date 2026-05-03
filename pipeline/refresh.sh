@@ -115,6 +115,17 @@ elif [[ -f "$CROSS_REFS_YAML" ]]; then
         --out  "$PARQUET_ROOT/cross_refs/cross_refs.parquet"
 fi
 
+# ── Social media graph (sibling repo aggregates) ──
+SOCIAL_DIR="${SOCIAL_DIR:-/Users/georgegao/Social Media Graph/pipeline/output}"
+if [[ -f "$SOCIAL_DIR/checkins.json" || -f "$SOCIAL_DIR/timeline.json" ]]; then
+    echo "Ingesting social-media-graph aggregates..."
+    python3 -m pipeline.parsers.social \
+        --checkins "$SOCIAL_DIR/checkins.json" \
+        --timeline "$SOCIAL_DIR/timeline.json" \
+        --events-outdir "$PARQUET_ROOT/events" \
+        --summary-out "$PARQUET_ROOT/social_summary.json"
+fi
+
 # ── Build vitals JS ──
 echo "Building data-vitals.js..."
 python3 -m pipeline.build_vitals \
