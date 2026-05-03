@@ -38,7 +38,6 @@
       <ul class="nav-sections">
         <li><button class="nav-btn" data-section="hero-card"      data-num="·">Now</button></li>
         <li><button class="nav-btn" data-section="today-session"  data-num="·">Session</button></li>
-        <li><button class="nav-btn" data-section="action-loop"    data-num="·">Action Loop</button></li>
         <li><button class="nav-btn" data-section="prep-checklist" data-num="·">Prep</button></li>
         <li><button class="nav-btn" data-section="stack"          data-num="·">Stack</button></li>
         <li><button class="nav-btn" data-section="med-alerts"     data-num="·">Med alerts</button></li>
@@ -50,6 +49,7 @@
       <ul class="nav-sections">
         <li><button class="nav-btn" data-section="vision"         data-num="·">Vision</button></li>
         <li><button class="nav-btn" data-section="goals"          data-num="·">Goals</button></li>
+        <li><button class="nav-btn" data-section="action-loop"    data-num="·">Action Loop</button></li>
         <li><button class="nav-btn" data-section="roadmap"        data-num="·">Roadmap</button></li>
         <li><button class="nav-btn" data-section="streak"         data-num="·">Streak</button></li>
         <li><button class="nav-btn" data-section="weekly-recap"   data-num="·">Recap</button></li>
@@ -116,18 +116,6 @@
     <div class="hero-card" id="hero-card-body"></div>
   </section>
 
-  <!-- Action Loop — genome × measured signal × today's gap -->
-  <section class="section" id="action-loop" data-tab="interventions">
-    <p class="section-kicker">Genome × measured · today</p>
-    <h2 class="section-title">Action Loop</h2>
-    <p class="section-lead">
-      Each card pairs a genetic finding with the measurement it predicts and the
-      most recent value from your wearables/labs. Green = on target. Amber = drifting.
-      Gray = awaiting data.
-    </p>
-    <div class="action-loop-grid" id="action-loop-grid"></div>
-  </section>
-
   <!-- Today's Session — exercises + warmup + rehab -->
   <section class="section" id="today-session" data-tab="interventions">
     <p class="section-kicker">Today · session</p>
@@ -163,6 +151,18 @@
     <p class="section-kicker">Targets · with deadlines</p>
     <h2 class="section-title">Goals</h2>
     <div class="goals-list" id="goals-list"></div>
+  </section>
+
+  <!-- Action Loop — genome × measured · the same shape as Goals -->
+  <section class="section" id="action-loop" data-tab="plan">
+    <p class="section-kicker">Genome × measured · current state</p>
+    <h2 class="section-title">Action Loop</h2>
+    <p class="section-lead">
+      Each card pairs a genetic finding with the measurement it predicts and the
+      most recent value from your wearables/labs. Green = on target. Amber = drifting.
+      Gray = awaiting data.
+    </p>
+    <div class="action-loop-grid" id="action-loop-grid"></div>
   </section>
 
   <!-- Block roadmap (responsive: timeline on desktop, sections on mobile) -->
