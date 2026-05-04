@@ -3,7 +3,7 @@
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
 } from './data.js';
-import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS, ADAPTED_SESSION, SOCIAL } from './data-vitals.js';
+import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS, ADAPTED_SESSION, SOCIAL, CALENDAR } from './data-vitals.js';
 import { VITAL_TARGETS } from './vitals-targets.js';
 
 /* ── Render hero stats ── */
@@ -980,6 +980,36 @@ function renderBirthdays() {
   }).join('');
 }
 
+/* ── Upcoming calendar events (Google) ── */
+function renderCalendar() {
+  const root = document.getElementById('calendar-list');
+  if (!root) return;
+  const events = CALENDAR || [];
+  if (events.length === 0) {
+    root.innerHTML = `<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">
+      No calendar connected. One-time setup:
+      <code>python3 -m pipeline.parsers.gcal auth</code>
+      after dropping <code>google_credentials.json</code> at
+      <code>~/.config/personal-data/</code>.</p>`;
+    return;
+  }
+  const fmt = ts => {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    if (ts.length === 10) return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · all day';
+    return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) +
+           ' · ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  };
+  root.innerHTML = events.slice(0, 10).map(e => `
+    <article class="cal-row">
+      <div class="cal-when">${fmt(e.start)}</div>
+      <div class="cal-summary">${e.summary || '(no title)'}</div>
+      ${e.location ? `<div class="cal-location">${e.location}</div>` : ''}
+      ${e.url ? `<a class="cal-open" href="${e.url}" target="_blank">open ↗</a>` : ''}
+    </article>
+  `).join('');
+}
+
 /* ── Stateful tracking helpers ──
  * Supps + session items reset daily. Roadmap items + goal current values
  * persist forever (until user un-checks).
@@ -1420,6 +1450,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // INTERVENTIONS tab
   renderActionLoop();
   renderHeroCard();
+  renderCalendar();
   renderReachOutToday();
   renderTodaySession();
   renderAdherenceChip();

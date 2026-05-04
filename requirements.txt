@@ -2,3 +2,8 @@ duckdb>=1.0
 pyarrow>=16
 pyyaml>=6
 pytest>=8
+
+# Google Calendar OAuth (optional — refresh.sh degrades gracefully without)
+google-auth>=2.30
+google-auth-oauthlib>=1.2
+google-api-python-client>=2.130

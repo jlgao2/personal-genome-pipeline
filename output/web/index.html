@@ -40,6 +40,7 @@
       <span class="rail-section-label">Today</span>
       <ul class="nav-sections">
         <li><button class="nav-btn" data-section="hero-card"        data-num="·">Now</button></li>
+        <li><button class="nav-btn" data-section="calendar-next"   data-num="·">Calendar</button></li>
         <li><button class="nav-btn" data-section="reach-out-today" data-num="·">Reach out</button></li>
         <li><button class="nav-btn" data-section="today-session"   data-num="·">Session</button></li>
         <li><button class="nav-btn" data-section="prep-checklist"  data-num="·">Prep</button></li>
@@ -126,6 +127,13 @@
   <!-- Hero card — most-actionable thing right now -->
   <section class="section" id="hero-card" data-tab="interventions">
     <div class="hero-card" id="hero-card-body"></div>
+  </section>
+
+  <!-- Next — upcoming Google Calendar events -->
+  <section class="section" id="calendar-next" data-tab="interventions">
+    <p class="section-kicker">Today · calendar</p>
+    <h2 class="section-title">Next</h2>
+    <div class="calendar-list" id="calendar-list"></div>
   </section>
 
   <!-- Reach out today — top 3 attention-needing people -->
