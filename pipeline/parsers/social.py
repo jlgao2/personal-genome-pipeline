@@ -28,7 +28,36 @@ def load_checkins(checkins_path: Path) -> Optional[dict]:
     return json.loads(checkins_path.read_text())
 
 
-def build_social_summary(checkins_path: Path, top_n: int = 12) -> Optional[dict]:
+def _topics_for_person(name: Optional[str], clusters_root: Optional[Path]) -> list[str]:
+    """Return the cluster topic slugs for a person, by matching the cluster
+    folder name to a sluggified version of the person's display name."""
+    if not name or not clusters_root or not clusters_root.exists():
+        return []
+    # Filename convention: clusters/<Person_Name>/ej_cluster_<topic>.md
+    # Match by best-effort sanitized name comparison.
+    target = name.replace(" ", "_").lower()
+    for child in clusters_root.iterdir():
+        if not child.is_dir():
+            continue
+        if child.name.lower().replace(" ", "_") != target:
+            continue
+        topics = []
+        for f in sorted(child.iterdir()):
+            if not f.name.endswith(".md"):
+                continue
+            stem = f.stem
+            # Strip common prefixes
+            for pfx in ("ej_cluster_", "cluster_"):
+                if stem.startswith(pfx):
+                    stem = stem[len(pfx):]
+            topics.append(stem.replace("_", " "))
+        return topics
+    return []
+
+
+def build_social_summary(checkins_path: Path,
+                         top_n: int = 12,
+                         clusters_root: Optional[Path] = None) -> Optional[dict]:
     """Return a compact summary suitable for the dashboard bundle.
     Includes top-N reach-out list and upcoming birthdays.
     """
@@ -36,10 +65,8 @@ def build_social_summary(checkins_path: Path, top_n: int = 12) -> Optional[dict]
     if not data:
         return None
     people = data.get("people") or []
-    # Top by attention_score (already sorted in source, but enforce).
     reach_out = sorted(people, key=lambda p: -(p.get("attention_score") or 0))[:top_n]
 
-    # Upcoming birthdays (next 60 days).
     birthdays = [p for p in people
                  if p.get("days_until_birthday") is not None
                  and p["days_until_birthday"] <= 60]
@@ -49,12 +76,12 @@ def build_social_summary(checkins_path: Path, top_n: int = 12) -> Optional[dict]
         "generated":   data.get("generated"),
         "today":       data.get("today"),
         "total_people": data.get("count"),
-        "reach_out":   [_compact_person(p) for p in reach_out],
+        "reach_out":   [_compact_person(p, clusters_root) for p in reach_out],
         "birthdays":   [_compact_birthday(p) for p in birthdays],
     }
 
 
-def _compact_person(p: dict) -> dict:
+def _compact_person(p: dict, clusters_root: Optional[Path] = None) -> dict:
     """Trim a person dict to the keys the dashboard renders."""
     return {
         "id":              p.get("canonical_id"),
@@ -67,6 +94,7 @@ def _compact_person(p: dict) -> dict:
         "sources":         p.get("sources"),
         "msg_count":       p.get("msg_count"),
         "has_portrait":    p.get("has_portrait"),
+        "topics":          _topics_for_person(p.get("display_name"), clusters_root),
     }
 
 
@@ -154,7 +182,8 @@ def _cli() -> None:
     args = ap.parse_args()
 
     n = parse_timeline_to_parquet(args.timeline, args.events_outdir)
-    summary = build_social_summary(args.checkins)
+    clusters_root = args.checkins.parent / "clusters"
+    summary = build_social_summary(args.checkins, clusters_root=clusters_root)
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)
     if summary:
         args.summary_out.write_text(json.dumps(summary, indent=2))

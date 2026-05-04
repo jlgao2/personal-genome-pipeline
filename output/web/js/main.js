@@ -302,6 +302,7 @@ function renderTodaySession() {
     ['Main',    day.main],
     ['Core',    day.core],
   ];
+  const state = dailyState('session');
   for (const [name, items] of order) {
     if (!items || items.length === 0) {
       if (dayKey === 'Day 7') continue;
@@ -311,11 +312,25 @@ function renderTodaySession() {
     blocks.push(`
       <article class="session-block">
         <div class="session-block-title">${name}</div>
-        <ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>
+        <ul class="session-checklist">${items.map(i => {
+          const id = `${name}:${i}`;
+          const done = state.get(id);
+          return `<li class="session-item ${done ? 'is-done' : ''}" data-id="${id.replace(/"/g,'&quot;')}" role="button" tabindex="0">
+            <span class="session-item-check">${done ? '✓' : '○'}</span>
+            <span class="session-item-text">${i}</span>
+          </li>`;
+        }).join('')}</ul>
       </article>
     `);
   }
   root.innerHTML = blocks.join('');
+  root.querySelectorAll('.session-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      state.set(id, !state.get(id));
+      renderTodaySession();
+    });
+  });
 }
 
 /* ── Pre-workout checklist (interactive, persists in localStorage) ── */
@@ -539,6 +554,7 @@ function renderStack() {
     const bi = TIMING_ORDER.indexOf(b);
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
+  const state = dailyState('stack');
   root.innerHTML = sortedTimings.map(t => {
     const items = byTiming[t];
     const label = TIMING_LABELS[t] || t;
@@ -549,17 +565,29 @@ function renderStack() {
           <span class="stack-time-label">${label}</span>
           <span class="stack-time-meta">${food}</span>
         </div>
-        ${items.map(i => `
-          <div class="stack-item">
+        ${items.map(i => {
+          const id = i.name;
+          const done = state.get(id);
+          return `
+          <div class="stack-item ${done ? 'is-done' : ''}" data-id="${id}" tabindex="0" role="button" aria-pressed="${done}">
+            <span class="stack-item-check">${done ? '✓' : '○'}</span>
             <div class="stack-item-name" data-evidence="${i.evidence || 'moderate'}">${i.name}</div>
             <div class="stack-item-dose">${i.dose || ''}</div>
             <div class="stack-item-rationale">${i.rationale || ''}</div>
             ${(i.links && i.links.length) ? `<div class="stack-item-links">${i.links.map(l => `<span class="stack-item-link">→ ${l}</span>`).join('')}</div>` : ''}
           </div>
-        `).join('')}
+          `;
+        }).join('')}
       </article>
     `;
   }).join('');
+  root.querySelectorAll('.stack-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      state.set(id, !state.get(id));
+      renderStack();
+    });
+  });
 }
 
 /* ── Render Action Loop (genome × measured × today) ── */
@@ -729,16 +757,18 @@ function renderGoals() {
     return;
   }
   const today = new Date();
+  const overrides = persistentState('goal_current');  // user-edited current values
   root.innerHTML = goals.map(g => {
+    const override = overrides.get(g.name);
+    const current = override != null ? override : g.current;
     let pct = 0;
     let state = 'pending';
-    if (g.current != null && g.baseline != null && g.target != null) {
+    if (current != null && g.baseline != null && g.target != null) {
       const total = g.target - g.baseline;
-      const done = g.current - g.baseline;
+      const done = current - g.baseline;
       pct = total !== 0 ? Math.max(0, Math.min(100, (done / total) * 100)) : 0;
-      // Time check: are we ahead/behind the linear schedule?
       if (g.deadline) {
-        const start = new Date('2026-05-01').getTime();  // approximate start
+        const start = new Date('2026-05-01').getTime();
         const end = new Date(g.deadline).getTime();
         if (end > start) {
           const elapsed = (today.getTime() - start) / (end - start);
@@ -750,17 +780,38 @@ function renderGoals() {
       }
     }
     const dl = g.deadline ? new Date(g.deadline).toLocaleDateString('en-US', {month:'short', year:'2-digit'}) : '—';
-    const cur = g.current != null ? `${g.current}` : '—';
+    const cur = current != null ? `${current}` : '—';
     const tgt = g.target != null ? `${g.target}` : '—';
+    const id = (g.name || '').replace(/"/g,'&quot;');
     return `
-      <div class="goal-row">
-        <div class="goal-name">${g.name}</div>
-        <div class="goal-meta">${cur} → ${tgt} ${g.units || ''} · by ${dl}</div>
+      <div class="goal-row" data-name="${id}">
+        <div class="goal-name">${g.name} ${override != null ? '<span class="goal-edited">·edited</span>' : ''}</div>
+        <div class="goal-meta">
+          <button class="goal-edit-btn" data-action="edit-current" data-name="${id}">${cur}</button>
+          → ${tgt} ${g.units || ''} · by ${dl}
+        </div>
         <div class="goal-bar"><div class="goal-bar-fill" data-state="${state}" style="width:${pct.toFixed(0)}%"></div></div>
         <div class="goal-detail">${g.note || ''}</div>
       </div>
     `;
   }).join('');
+  // Wire edit buttons — inline prompt to update current value
+  root.querySelectorAll('[data-action="edit-current"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.name;
+      const g = goals.find(x => x.name === name);
+      const cur = overrides.get(name) ?? g?.current ?? '';
+      const next = prompt(`Update current value for "${name}" (units: ${g?.units || ''}). Leave blank to clear override.`, cur);
+      if (next === null) return;
+      const trimmed = next.trim();
+      if (trimmed === '') overrides.set(name, false);  // clear
+      else {
+        const num = parseFloat(trimmed);
+        if (!Number.isNaN(num)) overrides.set(name, num);
+      }
+      renderGoals();
+    });
+  });
 }
 
 /* ── Roadmap (responsive: timeline desktop, sections mobile) ── */
@@ -773,13 +824,30 @@ function renderRoadmap() {
     { tick: '2-3mo', title: 'Block 3 · 2-3mo',  items: HEALTH_PROFILE?.action_plan_medium_term_2_to_3_months || [] },
     { tick: '∞',     title: 'Ongoing',          items: HEALTH_PROFILE?.action_plan_ongoing || [] },
   ];
+  const state = persistentState('roadmap_done');
   root.innerHTML = blocks.map(b => `
     <article class="roadmap-block">
       <span class="roadmap-block-tick">${b.tick}</span>
       <span class="roadmap-block-title">${b.title}</span>
-      <ul>${b.items.length ? b.items.map(i => `<li>${i}</li>`).join('') : '<li style="opacity:0.5;">—</li>'}</ul>
+      <ul class="roadmap-checklist">${b.items.length
+        ? b.items.map(i => {
+            const id = `${b.tick}:${i}`;
+            const done = state.get(id);
+            return `<li class="roadmap-item ${done ? 'is-done' : ''}" data-id="${id.replace(/"/g,'&quot;')}" role="button" tabindex="0">
+              <span class="roadmap-item-check">${done ? '✓' : '○'}</span>
+              <span class="roadmap-item-text">${i}</span>
+            </li>`;
+          }).join('')
+        : '<li style="opacity:0.5;">—</li>'}</ul>
     </article>
   `).join('');
+  root.querySelectorAll('.roadmap-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      state.set(id, !state.get(id));
+      renderRoadmap();
+    });
+  });
 }
 
 /* ── Streak / contribution graph (last 12 weeks: sleep + workouts) ── */
@@ -875,12 +943,14 @@ function renderReachOut() {
     const since = p.days_since_last != null
       ? `${p.days_since_last}d since last (${p.last_msg_from || '?'})`
       : '—';
+    const topics = (p.topics || []).slice(0, 5);
     return `
       <article class="reach-out-row">
         <div class="ro-name">${p.name || '(unknown)'}</div>
         <div class="ro-attention" data-tier="${tier}">attn ${p.attention_score ?? '—'}</div>
         <div class="ro-since">${since}</div>
         ${p.about_what ? `<div class="ro-about">${p.about_what}</div>` : ''}
+        ${topics.length ? `<div class="ro-topics">${topics.map(t => `<span class="ro-topic">${t}</span>`).join('')}</div>` : ''}
         ${p.last_excerpt ? `<div class="ro-excerpt">"${p.last_excerpt}"</div>` : ''}
       </article>
     `;
@@ -908,6 +978,100 @@ function renderBirthdays() {
       </article>
     `;
   }).join('');
+}
+
+/* ── Stateful tracking helpers ──
+ * Supps + session items reset daily. Roadmap items + goal current values
+ * persist forever (until user un-checks).
+ */
+function todayKey() { return new Date().toISOString().slice(0, 10); }
+
+function dailyState(prefix) {
+  const key = `${prefix}_${todayKey()}`;
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch { state = {}; }
+  return {
+    get: id => !!state[id],
+    set: (id, v) => {
+      state[id] = !!v;
+      try { localStorage.setItem(key, JSON.stringify(state)); } catch {}
+    },
+  };
+}
+
+function persistentState(key) {
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch { state = {}; }
+  return {
+    get: id => state[id],
+    set: (id, v) => {
+      if (v == null || v === false) delete state[id];
+      else state[id] = v;
+      try { localStorage.setItem(key, JSON.stringify(state)); } catch {}
+    },
+  };
+}
+
+/* ── Reach out today — top 3 on the Now tab ── */
+function renderReachOutToday() {
+  const root = document.getElementById('reach-out-today-list');
+  if (!root) return;
+  const all = (SOCIAL && SOCIAL.reach_out) || [];
+  if (all.length === 0) {
+    root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No social data — add the social-media-graph repo to refresh.sh.</p>';
+    return;
+  }
+  // Skip people already reached-out today (state)
+  const state = dailyState('reachout');
+  const top = all.filter(p => !state.get(p.id || p.name)).slice(0, 3);
+  if (top.length === 0) {
+    root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--rune);">All today\'s reach-outs marked done. ✓</p>';
+    return;
+  }
+  root.innerHTML = top.map(p => {
+    const tier = attentionTier(p.attention_score);
+    const since = p.days_since_last != null
+      ? `${p.days_since_last}d since last (${p.last_msg_from || '?'})`
+      : '—';
+    const id = p.id || p.name;
+    const topics = (p.topics || []).slice(0, 5);
+    return `
+      <article class="reach-out-row" data-pid="${id}">
+        <div class="ro-name">${p.name || '(unknown)'}</div>
+        <div class="ro-attention" data-tier="${tier}">attn ${p.attention_score ?? '—'}</div>
+        <div class="ro-since">${since}</div>
+        ${p.about_what ? `<div class="ro-about">${p.about_what}</div>` : ''}
+        ${topics.length ? `<div class="ro-topics">${topics.map(t => `<span class="ro-topic">${t}</span>`).join('')}</div>` : ''}
+        ${p.last_excerpt ? `<div class="ro-excerpt">"${p.last_excerpt}"</div>` : ''}
+        <div class="ro-actions">
+          <button class="ro-btn ro-btn-done" data-action="done">Mark done</button>
+          <button class="ro-btn" data-action="copy" data-name="${(p.name||'').replace(/"/g,'&quot;')}">Copy name</button>
+          ${p.about_what ? `<button class="ro-btn" data-action="prompt">Reflection prompt</button>` : ''}
+        </div>
+      </article>
+    `;
+  }).join('');
+  // Wire up action buttons
+  root.querySelectorAll('.reach-out-row').forEach(row => {
+    const id = row.dataset.pid;
+    row.querySelector('[data-action="done"]')?.addEventListener('click', () => {
+      state.set(id, true);
+      renderReachOutToday();
+    });
+    row.querySelector('[data-action="copy"]')?.addEventListener('click', e => {
+      navigator.clipboard?.writeText(e.target.dataset.name || '');
+      e.target.textContent = '✓ copied';
+      setTimeout(() => e.target.textContent = 'Copy name', 1200);
+    });
+    row.querySelector('[data-action="prompt"]')?.addEventListener('click', () => {
+      const prompts = [
+        'What were they working on last time you spoke?',
+        'What\'s one specific thing they\'d care to hear about your week?',
+        'What\'s a 30-second voice memo you could send instead of a text?',
+      ];
+      alert(prompts[Math.floor(Math.random() * prompts.length)]);
+    });
+  });
 }
 
 /* ── Tab switching ── */
@@ -1256,6 +1420,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // INTERVENTIONS tab
   renderActionLoop();
   renderHeroCard();
+  renderReachOutToday();
   renderTodaySession();
   renderAdherenceChip();
   renderPrepChecklist();

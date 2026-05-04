@@ -1583,10 +1583,10 @@ main {
 .recap-cell-delta[data-trend="worse"]  { color: var(--warn); }
 .recap-cell-delta[data-trend="same"]   { color: var(--fg-dim); }
 
-/* ── Tab nav (replaces flat rail list) ── */
+/* ── Tab nav: vertical stack in left rail ── */
 .rail-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1px;
   background: var(--border);
   border: 1px solid var(--border);
@@ -1596,22 +1596,24 @@ main {
   background: var(--bg-card);
   color: var(--fg-dim);
   border: none;
-  padding: 0.7rem 0.4rem;
+  padding: 0.7rem 0.9rem;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: flex-start;
+  flex-direction: row;
+  gap: 0.6rem;
+  align-items: baseline;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   font-family: var(--font-mono);
+  text-align: left;
 }
 .tab-btn .tab-num {
   font-size: 0.5rem;
   letter-spacing: 0.18em;
   color: var(--fg-mute);
+  min-width: 1.5em;
 }
 .tab-btn .tab-name {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -1619,7 +1621,7 @@ main {
 .tab-btn.is-active {
   background: var(--bg-card);
   color: var(--accent);
-  box-shadow: inset 0 -2px 0 var(--accent);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 .tab-btn.is-active .tab-num { color: var(--accent); }
 
@@ -2085,4 +2087,123 @@ body[data-active-tab="genome"]  .section[data-tab]:not([data-tab="genome"]) {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg-dim);
+}
+
+/* ── Stateful checkboxes — used by Stack, Session, Roadmap, Reach-Out ── */
+.stack-item, .session-item, .roadmap-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.4rem 0;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.stack-item-check, .session-item-check, .roadmap-item-check {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+.stack-item.is-done .stack-item-check,
+.session-item.is-done .session-item-check,
+.roadmap-item.is-done .roadmap-item-check { color: var(--rune); }
+
+.session-item.is-done, .roadmap-item.is-done, .stack-item.is-done {
+  opacity: 0.55;
+}
+.session-item.is-done .session-item-text,
+.roadmap-item.is-done .roadmap-item-text {
+  text-decoration: line-through;
+  text-decoration-color: var(--rune);
+}
+.stack-item.is-done .stack-item-name {
+  text-decoration: line-through;
+  text-decoration-color: var(--rune);
+}
+/* Layout overrides for stack-item which has multi-row content */
+.stack-item {
+  grid-template-columns: 18px 1fr auto;
+}
+.stack-item .stack-item-name { grid-column: 2; }
+.stack-item .stack-item-dose { grid-column: 3; align-self: center; }
+.stack-item .stack-item-rationale { grid-column: 2 / -1; }
+.stack-item .stack-item-links { grid-column: 2 / -1; }
+
+.session-checklist, .roadmap-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* ── Reach-out action buttons ── */
+.reach-out-row {
+  position: relative;
+}
+.ro-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+.ro-btn {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.ro-btn:hover { background: var(--accent-soft); }
+.ro-btn-done {
+  border-color: var(--rune);
+  color: var(--rune);
+}
+.ro-btn-done:hover { background: rgba(125, 240, 168, 0.1); }
+
+/* ── Goal edit affordance ── */
+.goal-edit-btn {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--accent);
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0 2px;
+}
+.goal-edit-btn:hover { background: var(--accent-soft); }
+.goal-edited {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rune);
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* ── Reach-out topic pills (per-person conversation themes) ── */
+.ro-topics {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+.ro-topic {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rune);
+  border: 1px solid rgba(125, 240, 168, 0.35);
+  padding: 2px 6px;
 }

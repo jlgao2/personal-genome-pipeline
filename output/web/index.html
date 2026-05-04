@@ -39,11 +39,12 @@
     <nav class="rail-section" data-tab-children="interventions">
       <span class="rail-section-label">Today</span>
       <ul class="nav-sections">
-        <li><button class="nav-btn" data-section="hero-card"      data-num="·">Now</button></li>
-        <li><button class="nav-btn" data-section="today-session"  data-num="·">Session</button></li>
-        <li><button class="nav-btn" data-section="prep-checklist" data-num="·">Prep</button></li>
-        <li><button class="nav-btn" data-section="stack"          data-num="·">Stack</button></li>
-        <li><button class="nav-btn" data-section="med-alerts"     data-num="·">Med alerts</button></li>
+        <li><button class="nav-btn" data-section="hero-card"        data-num="·">Now</button></li>
+        <li><button class="nav-btn" data-section="reach-out-today" data-num="·">Reach out</button></li>
+        <li><button class="nav-btn" data-section="today-session"   data-num="·">Session</button></li>
+        <li><button class="nav-btn" data-section="prep-checklist"  data-num="·">Prep</button></li>
+        <li><button class="nav-btn" data-section="stack"           data-num="·">Stack</button></li>
+        <li><button class="nav-btn" data-section="med-alerts"      data-num="·">Med alerts</button></li>
       </ul>
     </nav>
 
@@ -125,6 +126,13 @@
   <!-- Hero card — most-actionable thing right now -->
   <section class="section" id="hero-card" data-tab="interventions">
     <div class="hero-card" id="hero-card-body"></div>
+  </section>
+
+  <!-- Reach out today — top 3 attention-needing people -->
+  <section class="section" id="reach-out-today" data-tab="interventions">
+    <p class="section-kicker">Today · relationships</p>
+    <h2 class="section-title">Reach out</h2>
+    <div class="reach-out-list" id="reach-out-today-list"></div>
   </section>
 
   <!-- Today's Session — exercises + warmup + rehab -->
