@@ -792,6 +792,9 @@ function renderGoals() {
         </div>
         <div class="goal-bar"><div class="goal-bar-fill" data-state="${state}" style="width:${pct.toFixed(0)}%"></div></div>
         <div class="goal-detail">${g.note || ''}</div>
+        ${g.deadline ? `<div class="goal-actions">
+          <button class="ro-btn" data-action="goal-remind" data-name="${id}" data-deadline="${g.deadline}" data-units="${g.units || ''}" data-target="${g.target}" data-note="${(g.note||'').replace(/"/g,'&quot;')}">+ Calendar reminder</button>
+        </div>` : ''}
       </div>
     `;
   }).join('');
@@ -810,6 +813,20 @@ function renderGoals() {
         if (!Number.isNaN(num)) overrides.set(name, num);
       }
       renderGoals();
+    });
+  });
+  // Wire calendar-reminder buttons
+  root.querySelectorAll('[data-action="goal-remind"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.name;
+      const dl = new Date(btn.dataset.deadline + 'T09:00:00');
+      const remind = new Date(dl.getTime() - 7 * 86_400_000);
+      const url = gcalTemplateURL({
+        title: `Goal check-in: ${name}`,
+        start: remind, durationMin: 30,
+        details: `Target: ${btn.dataset.target} ${btn.dataset.units}\nDeadline: ${btn.dataset.deadline}\n${btn.dataset.note || ''}`,
+      });
+      window.open(url, '_blank', 'noopener');
     });
   });
 }
@@ -1010,6 +1027,26 @@ function renderCalendar() {
   `).join('');
 }
 
+/* ── Google Calendar template URL (no OAuth needed at use time) ──
+ * Opens calendar.google.com prefilled; user clicks Save in their browser.
+ */
+function gcalTemplateURL({ title, start, durationMin = 30, details = '', location = '' }) {
+  const fmt = d => {
+    const pad = n => String(n).padStart(2, '0');
+    return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate())
+         + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z';
+  };
+  const end = new Date(start.getTime() + durationMin * 60 * 1000);
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${fmt(start)}/${fmt(end)}`,
+    details,
+    location,
+  });
+  return 'https://calendar.google.com/calendar/render?' + params.toString();
+}
+
 /* ── Stateful tracking helpers ──
  * Supps + session items reset daily. Roadmap items + goal current values
  * persist forever (until user un-checks).
@@ -1075,6 +1112,7 @@ function renderReachOutToday() {
         ${p.last_excerpt ? `<div class="ro-excerpt">"${p.last_excerpt}"</div>` : ''}
         <div class="ro-actions">
           <button class="ro-btn ro-btn-done" data-action="done">Mark done</button>
+          <button class="ro-btn" data-action="schedule" data-name="${(p.name||'').replace(/"/g,'&quot;')}" data-about="${(p.about_what||'').replace(/"/g,'&quot;')}">Schedule</button>
           <button class="ro-btn" data-action="copy" data-name="${(p.name||'').replace(/"/g,'&quot;')}">Copy name</button>
           ${p.about_what ? `<button class="ro-btn" data-action="prompt">Reflection prompt</button>` : ''}
         </div>
@@ -1100,6 +1138,20 @@ function renderReachOutToday() {
         'What\'s a 30-second voice memo you could send instead of a text?',
       ];
       alert(prompts[Math.floor(Math.random() * prompts.length)]);
+    });
+    row.querySelector('[data-action="schedule"]')?.addEventListener('click', e => {
+      const name = e.target.dataset.name || 'Friend';
+      const about = e.target.dataset.about || '';
+      // Default: tomorrow 10am local
+      const start = new Date();
+      start.setDate(start.getDate() + 1);
+      start.setHours(10, 0, 0, 0);
+      const url = gcalTemplateURL({
+        title: `Reach out: ${name}`,
+        start, durationMin: 30,
+        details: about,
+      });
+      window.open(url, '_blank', 'noopener');
     });
   });
 }

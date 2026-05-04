@@ -2261,3 +2261,5 @@ body[data-active-tab="genome"]  .section[data-tab]:not([data-tab="genome"]) {
   align-self: center;
 }
 .cal-open:hover { background: var(--accent-soft); }
+
+.goal-actions { grid-column: 1 / -1; margin-top: 0.4rem; }
