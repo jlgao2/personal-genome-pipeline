@@ -2320,3 +2320,11 @@ body[data-active-tab="genome"]  .section[data-tab]:not([data-tab="genome"]) {
   color: var(--fg-dim);
   line-height: 1.45;
 }
+
+/* Pre-flight block inside the session — distinct from rehab/warmup/main/core */
+.session-block-prep {
+  border-left: 2px solid var(--accent);
+}
+.session-block-prep .session-block-title {
+  color: var(--accent);
+}

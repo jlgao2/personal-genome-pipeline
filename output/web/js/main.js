@@ -296,26 +296,34 @@ function renderTodaySession() {
       <span class="day-tag">${dayKey}</span>${day.session}
     </div>
   `);
+  // Pre-flight check inserted as the first block (before Rehab) when this
+  // is a training day. Same per-day localStorage state as before — id key
+  // 'session' for exercises and 'prep' for the pre-flight items.
+  const prepItems = HEALTH_PROFILE?.prep_checklist_template || [];
   const order = [
-    ['Rehab',   day.rehab],
-    ['Warmup',  day.warmup],
-    ['Main',    day.main],
-    ['Core',    day.core],
+    ...(prepItems.length && dayKey !== 'Day 7' ? [['Pre-flight', prepItems, 'prep']] : []),
+    ['Rehab',   day.rehab,   'session'],
+    ['Warmup',  day.warmup,  'session'],
+    ['Main',    day.main,    'session'],
+    ['Core',    day.core,    'session'],
   ];
-  const state = dailyState('session');
-  for (const [name, items] of order) {
+  const sessionState = dailyState('session');
+  const prepState = dailyState('prep');
+  const stateFor = key => key === 'prep' ? prepState : sessionState;
+  for (const [name, items, stateKey] of order) {
     if (!items || items.length === 0) {
       if (dayKey === 'Day 7') continue;
       blocks.push(`<article class="session-block empty"><div class="session-block-title">${name}</div><ul><li>—</li></ul></article>`);
       continue;
     }
+    const state = stateFor(stateKey);
     blocks.push(`
-      <article class="session-block">
+      <article class="session-block ${name === 'Pre-flight' ? 'session-block-prep' : ''}">
         <div class="session-block-title">${name}</div>
         <ul class="session-checklist">${items.map(i => {
           const id = `${name}:${i}`;
           const done = state.get(id);
-          return `<li class="session-item ${done ? 'is-done' : ''}" data-id="${id.replace(/"/g,'&quot;')}" role="button" tabindex="0">
+          return `<li class="session-item ${done ? 'is-done' : ''}" data-id="${id.replace(/"/g,'&quot;')}" data-state="${stateKey}" role="button" tabindex="0">
             <span class="session-item-check">${done ? '✓' : '○'}</span>
             <span class="session-item-text">${i}</span>
           </li>`;
@@ -327,7 +335,9 @@ function renderTodaySession() {
   root.querySelectorAll('.session-item').forEach(el => {
     el.addEventListener('click', () => {
       const id = el.dataset.id;
-      state.set(id, !state.get(id));
+      const stateKey = el.dataset.state || 'session';
+      const s = stateFor(stateKey);
+      s.set(id, !s.get(id));
       renderTodaySession();
     });
   });
@@ -1568,7 +1578,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMedia();
   renderTodaySession();
   renderAdherenceChip();
-  renderPrepChecklist();
   renderStack();
   renderMedAlerts();
   // PLAN tab
