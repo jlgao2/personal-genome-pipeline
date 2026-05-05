@@ -18,6 +18,8 @@ from pipeline.adaptive import (
     rule_already_trained_today,
     rule_actn3_anaerobic_emphasis,
     rule_apoe_e4_sleep_priority,
+    rule_high_cost_sport_yesterday,
+    rule_thursday_caution,
 )
 
 # ─── Helpers ────────────────────────────────────────────────────────────────
@@ -196,6 +198,66 @@ def test_apoe_e4_low_sleep():
     a = empty_adapted(sig)
     rule_apoe_e4_sleep_priority(sig, a)
     assert any("ε4" in n for n in a["notes"])
+
+
+# ─── Data-driven rules (from correlations) ─────────────────────────────────
+
+def test_high_cost_sport_yesterday_alpine_skiing():
+    sig = _sig(day="Day 1",
+               workouts_yesterday=[{"label": "Whistler", "sport": "ALPINE_SKIING", "tl": 78}])
+    a = empty_adapted(sig)
+    rule_high_cost_sport_yesterday(sig, a)
+    assert "high_cost_sport_yesterday" in a["rules_fired"]
+    assert a["traffic_light"] == "amber"
+    assert a["intensity_modifier"] <= 0.75
+    assert any("Alpine Skiing" in n for n in a["notes"])
+
+
+def test_high_cost_sport_yesterday_hiking():
+    sig = _sig(day="Day 2",
+               workouts_yesterday=[{"label": "Long hike", "sport": "HIKING", "tl": 60}])
+    a = empty_adapted(sig)
+    rule_high_cost_sport_yesterday(sig, a)
+    assert "high_cost_sport_yesterday" in a["rules_fired"]
+
+
+def test_high_cost_sport_yesterday_quiet_for_cycling():
+    sig = _sig(day="Day 1",
+               workouts_yesterday=[{"label": "Easy spin", "sport": "CYCLING", "tl": 30}])
+    a = empty_adapted(sig)
+    rule_high_cost_sport_yesterday(sig, a)
+    assert "high_cost_sport_yesterday" not in a["rules_fired"]
+
+
+def test_thursday_caution_fires_on_low_sleep():
+    sig = _sig(day="Day 4", sleep_min_last_night=320)
+    a = empty_adapted(sig)
+    rule_thursday_caution(sig, a)
+    assert "thursday_caution" in a["rules_fired"]
+    assert any("Thursday" in n for n in a["notes"])
+
+
+def test_thursday_caution_quiet_with_normal_sleep():
+    sig = _sig(day="Day 4", sleep_min_last_night=480)
+    a = empty_adapted(sig)
+    rule_thursday_caution(sig, a)
+    assert "thursday_caution" not in a["rules_fired"]
+
+
+def test_thursday_caution_quiet_other_day():
+    sig = _sig(day="Day 1", sleep_min_last_night=320)
+    a = empty_adapted(sig)
+    rule_thursday_caution(sig, a)
+    assert "thursday_caution" not in a["rules_fired"]
+
+
+def test_vo2max_modality_prefers_bike_when_peroneal_active():
+    sig = _sig(profile={"active_conditions": {"lower_extremity": ["Peroneal tendinopathy"]}},
+               action_loop=[{"sample_type": "vo2max", "latest_value": 30, "target_value": 35}])
+    a = empty_adapted(sig)
+    rule_vo2max_drift(sig, a)
+    assert any("bike" in item["item"].lower() or "rowing" in item["item"].lower()
+               for item in a["added"])
 
 
 def test_apoe_quiet_when_sleep_normal():

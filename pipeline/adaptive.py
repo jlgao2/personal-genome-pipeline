@@ -35,6 +35,7 @@ class Signals:
     sport_spread_last_7d: dict = field(default_factory=dict)
 
     workouts_today: list = field(default_factory=list)
+    workouts_yesterday: list = field(default_factory=list)
     profile: dict = field(default_factory=dict)
     action_loop: list = field(default_factory=list)
     genome: dict = field(default_factory=dict)
@@ -137,6 +138,21 @@ def compute_signals(parquet_root: Path,
                   AND date_trunc('day', ts_start::TIMESTAMP)::DATE = current_date
             """).fetchall()
             sig.workouts_today = [{"label": r[0], "sport": r[1]} for r in rows]
+        except duckdb.Error:
+            pass
+
+        # Yesterday's workouts (drives the high-cost-sport rule)
+        try:
+            rows = duckdb.query(f"""
+                SELECT label, json_extract_string(meta, '$.sport') AS sport,
+                       CAST(json_extract(meta, '$.training_load') AS DOUBLE) AS tl
+                FROM read_parquet('{e_glob}')
+                WHERE type='workout'
+                  AND date_trunc('day', ts_start::TIMESTAMP)::DATE = current_date - interval '1 day'
+            """).fetchall()
+            sig.workouts_yesterday = [
+                {"label": r[0], "sport": r[1], "tl": r[2]} for r in rows
+            ]
         except duckdb.Error:
             pass
 
@@ -312,6 +328,10 @@ def rule_elbow_reduce_grip(sig: Signals, adapted: dict) -> None:
 # ─── Goal / drift rules ─────────────────────────────────────────────────────
 
 def rule_vo2max_drift(sig: Signals, adapted: dict) -> None:
+    """When VO2Max is below target, prescribe zone-2 work — modality biased
+    by which sports correlate with positive recovery (bike/swim/row) rather
+    than running. The peroneal context already restricts running, but this
+    rule generalizes the modality preference per sport_recovery_cost data."""
     for c in sig.action_loop:
         if c.get("sample_type") != "vo2max":
             continue
@@ -320,12 +340,57 @@ def rule_vo2max_drift(sig: Signals, adapted: dict) -> None:
         if actual is None or target is None:
             return
         if actual < target * 0.95:
+            # Prefer recovery-positive modalities (cycling, swimming, rowing)
+            modality = "cycling/rowing"
+            if _has_condition(sig.profile, "lower_extremity", r"peroneal|tendon"):
+                modality = "stationary bike or rowing (zero ankle stress)"
             adapted["added"].append({
-                "item":   "10 min zone 2 cycling/rowing after main",
-                "reason": "VO2max below target on Action Loop",
+                "item":   f"10 min zone 2 {modality} after main",
+                "reason": "VO2max below target; bike/rowing per recovery-cost data",
             })
             adapted["rules_fired"].append("vo2max_drift")
         return
+
+
+# Sports that correlated with elevated next-day RHR (>+1.5 bpm) in user's
+# historical data. Pulled from pipeline.correlations sport_recovery_cost.
+_HIGH_COST_SPORTS = {"ALPINE_SKIING", "HIKING"}
+
+
+def rule_high_cost_sport_yesterday(sig: Signals, adapted: dict) -> None:
+    """If yesterday's session was a high-recovery-cost sport (per the user's
+    own correlation data), drop today's intensity and shift to recovery work."""
+    yesterday_sports = {(w.get("sport") or "").upper() for w in sig.workouts_yesterday}
+    hits = yesterday_sports & _HIGH_COST_SPORTS
+    if not hits:
+        return
+    # Don't override stronger states
+    if adapted["traffic_light"] == "green":
+        adapted["traffic_light"] = "amber"
+    adapted["intensity_modifier"] = min(adapted["intensity_modifier"], 0.75)
+    sport_name = next(iter(hits)).replace("_", " ").title()
+    suffix = f"{sport_name} yesterday — costs +2-3 bpm next-day RHR per your history"
+    prev = adapted.get("intensity_reason") or ""
+    adapted["intensity_reason"] = (prev + " · " + suffix) if prev else suffix
+    adapted["notes"].append(
+        f"Yesterday was {sport_name} — high recovery cost. Cap today's TL <40, "
+        "favor cycling / swimming / mobility."
+    )
+    adapted["rules_fired"].append("high_cost_sport_yesterday")
+
+
+def rule_thursday_caution(sig: Signals, adapted: dict) -> None:
+    """User's day-of-week pattern shows Thursday = lowest sleep + highest TL.
+    On Thursdays with already-low sleep, push toward lighter work."""
+    if sig.program_day != "Day 4":  # Thursday in the Mon-anchored schema
+        return
+    if sig.sleep_min_last_night is None or sig.sleep_min_last_night >= 360:
+        return
+    adapted["notes"].append(
+        "Thursday + low sleep is your historically worst combination "
+        "(avg 346 min, peak weekly TL). Consider swapping for Day 5 yoga."
+    )
+    adapted["rules_fired"].append("thursday_caution")
 
 
 def rule_sleep_streak_low(sig: Signals, adapted: dict) -> None:
@@ -395,6 +460,8 @@ RULES: list[Callable[[Signals, dict], None]] = [
     rule_elevated_rhr,
     rule_compounding_load,
     rule_low_body_battery,
+    rule_high_cost_sport_yesterday,   # data-driven (sport_recovery_cost)
+    rule_thursday_caution,             # data-driven (day_of_week)
     rule_peroneal_no_running,
     rule_peroneal_swap_lunges,
     rule_hip_no_deep_squat,
