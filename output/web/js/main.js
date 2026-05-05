@@ -760,17 +760,42 @@ function renderCorrelations() {
   if (list.length === 0) {
     root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No correlations yet — need ≥30 days of data.</p>';
   } else {
-    root.innerHTML = list.map(c => `
-      <article class="corr-card" data-trend="${c.trend}">
-        <div class="corr-header">
-          <span class="corr-name">${c.name}</span>
-          <span class="corr-trend" style="color:${trendColor(c.trend)}">${(c.trend||'').toUpperCase()}</span>
-        </div>
-        <div class="corr-summary">${c.summary || ''}</div>
-        <div class="corr-actionable">${c.actionable || ''}</div>
-        <div class="corr-meta">n = ${c.n}${c.r != null ? ` · r = ${c.r >= 0 ? '+' : ''}${c.r}` : ''}</div>
-      </article>
-    `).join('');
+    root.innerHTML = list.map(c => {
+      const tableHTML = c.table ? `
+        <div class="corr-table">
+          ${c.table.map(t => {
+            const delta = t.delta_rhr ?? 0;
+            const sign = delta >= 0 ? '+' : '';
+            const color = delta > 1 ? 'var(--warn)'
+                        : delta > 0 ? 'var(--accent)'
+                        : delta > -1 ? 'var(--fg-dim)'
+                        : 'var(--rune)';
+            const widthPct = Math.min(100, Math.abs(delta) * 18);
+            return `
+              <div class="corr-table-row">
+                <span class="corr-tbl-label">${t.sport}</span>
+                <span class="corr-tbl-bar">
+                  <span class="corr-tbl-bar-fill" style="width: ${widthPct}%; background: ${color}; ${delta < 0 ? 'margin-left:auto;' : ''}"></span>
+                </span>
+                <span class="corr-tbl-num" style="color: ${color}">${sign}${delta.toFixed(1)}</span>
+                <span class="corr-tbl-n">n=${t.n}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>` : '';
+      return `
+        <article class="corr-card" data-trend="${c.trend}">
+          <div class="corr-header">
+            <span class="corr-name">${c.name}</span>
+            <span class="corr-trend" style="color:${trendColor(c.trend)}">${(c.trend||'').toUpperCase()}</span>
+          </div>
+          ${c.table ? '' : `<div class="corr-summary">${c.summary || ''}</div>`}
+          ${tableHTML}
+          <div class="corr-actionable">${c.actionable || ''}</div>
+          <div class="corr-meta">n = ${c.n}${c.r != null ? ` · r = ${c.r >= 0 ? '+' : ''}${c.r}` : ''}</div>
+        </article>
+      `;
+    }).join('');
   }
 
   // DOW grid

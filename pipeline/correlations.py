@@ -201,6 +201,181 @@ def day_of_week_summary(parquet_root: Path) -> Optional[list[dict]]:
     return out
 
 
+def vigorous_to_deep_sleep(parquet_root: Path) -> Optional[dict]:
+    """Same-day vigorous minutes vs that night's deep sleep. Pearson r."""
+    s_glob = _samples_glob(parquet_root)
+    sql = f"""
+    WITH
+    vig AS (
+        SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, sum(value) AS v
+        FROM read_parquet('{s_glob}', union_by_name=true)
+        WHERE source='garmin' AND type='vigorous_minutes'
+        GROUP BY d
+    ),
+    deep AS (
+        SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d, sum(value) / 60.0 AS m
+        FROM read_parquet('{s_glob}', union_by_name=true)
+        WHERE source='garmin' AND type='sleep_deep'
+        GROUP BY d
+    )
+    SELECT corr(v.v, d.m) AS r, count(*) AS n,
+           avg(v.v) AS vig_avg, avg(d.m) AS deep_avg
+    FROM vig v
+    JOIN deep d ON d.d = v.d
+    WHERE v.v > 0
+    """
+    try:
+        row = duckdb.query(sql).fetchone()
+    except duckdb.Error:
+        return None
+    if not row or row[0] is None or row[1] is None or row[1] < 30:
+        return None
+    r, n, vig_avg, deep_avg = row
+    if abs(r) < 0.10:
+        trend = "neutral"
+        actionable = ("Hard training doesn't predict deeper sleep for you. Deep "
+                      "sleep is governed by something else — bedtime, alcohol, stress.")
+    elif r > 0:
+        trend = "positive"
+        actionable = (f"Hard training drives deeper sleep (r={r:+.2f}). Vigorous days "
+                      f"average {deep_avg:.0f} min deep — protect them.")
+    else:
+        trend = "negative"
+        actionable = (f"Hard training is actually shortening deep sleep (r={r:+.2f}). "
+                      "Likely too late in the day; try shifting earlier.")
+    return {
+        "name":       "Vigorous minutes (same day) → deep sleep that night",
+        "n":          int(n),
+        "trend":      trend,
+        "summary":    f"r = {r:+.2f} across {int(n)} days · avg vigorous {vig_avg:.0f} min · avg deep {deep_avg:.0f} min",
+        "actionable": actionable,
+        "r":          round(r, 2),
+    }
+
+
+def sport_recovery_cost(parquet_root: Path) -> Optional[dict]:
+    """For each sport type with ≥10 sessions, mean next-day RHR delta vs
+    user's overall RHR baseline. Ranks sports by recovery cost."""
+    s_glob = _samples_glob(parquet_root)
+    e_glob = _events_glob(parquet_root)
+    sql = f"""
+    WITH
+    rhr AS (
+        SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d,
+               avg(value) AS rhr
+        FROM read_parquet('{s_glob}', union_by_name=true)
+        WHERE type='heart_rate_resting' AND value IS NOT NULL
+        GROUP BY d
+    ),
+    baseline AS (SELECT avg(rhr) AS bl FROM rhr),
+    sessions AS (
+        SELECT date_trunc('day', ts_start::TIMESTAMP)::DATE AS d,
+               json_extract_string(meta, '$.sport') AS sport
+        FROM read_parquet('{e_glob}')
+        WHERE type='workout' AND json_extract_string(meta, '$.sport') IS NOT NULL
+    )
+    SELECT s.sport,
+           count(*) AS n,
+           avg(r.rhr - b.bl) AS delta_rhr
+    FROM sessions s
+    CROSS JOIN baseline b
+    JOIN rhr r ON r.d = s.d + INTERVAL 1 DAY
+    GROUP BY s.sport
+    HAVING count(*) >= 10
+    ORDER BY delta_rhr DESC
+    """
+    try:
+        rows = duckdb.query(sql).fetchall()
+    except duckdb.Error:
+        return None
+    if not rows:
+        return None
+    ranked = [{"sport": r[0], "n": int(r[1]), "delta_rhr": round(r[2], 2)} for r in rows]
+    if not ranked:
+        return None
+    worst = ranked[0]
+    best  = ranked[-1]
+    if worst["delta_rhr"] > 1.0:
+        actionable = (f"{worst['sport']} costs the most recovery — RHR runs +{worst['delta_rhr']:.1f} bpm above "
+                      f"baseline the next day (n={worst['n']}). "
+                      f"{best['sport']} is the lightest ({best['delta_rhr']:+.1f} bpm).")
+    else:
+        actionable = "All sports return RHR within a single bpm of baseline. No clear recovery hierarchy."
+    return {
+        "name":       "Recovery cost by sport (next-day RHR delta)",
+        "n":          int(sum(s["n"] for s in ranked)),
+        "trend":      "neutral",
+        "summary":    " · ".join(f"{s['sport']} {s['delta_rhr']:+.1f} (n={s['n']})" for s in ranked),
+        "actionable": actionable,
+        "table":      ranked,
+    }
+
+
+def chronic_load_to_rhr(parquet_root: Path) -> Optional[dict]:
+    """Long-window: 30-day rolling avg TL vs 30-day rolling avg RHR.
+    Tests whether sustained training lowers baseline (negative r = good)."""
+    s_glob = _samples_glob(parquet_root)
+    e_glob = _events_glob(parquet_root)
+    sql = f"""
+    WITH
+    rhr AS (
+        SELECT date_trunc('day', ts::TIMESTAMP)::DATE AS d,
+               avg(value) AS rhr
+        FROM read_parquet('{s_glob}', union_by_name=true)
+        WHERE type='heart_rate_resting' AND value IS NOT NULL
+        GROUP BY d
+    ),
+    tl AS (
+        SELECT date_trunc('day', ts_start::TIMESTAMP)::DATE AS d,
+               sum(coalesce(CAST(json_extract(meta, '$.training_load') AS DOUBLE), 0)) AS tl
+        FROM read_parquet('{e_glob}')
+        WHERE type='workout'
+        GROUP BY d
+    ),
+    daily AS (
+        SELECT COALESCE(rhr.d, tl.d) AS d, rhr.rhr, COALESCE(tl.tl, 0) AS tl
+        FROM rhr
+        FULL JOIN tl ON tl.d = rhr.d
+    ),
+    windowed AS (
+        SELECT d,
+               avg(rhr) OVER (ORDER BY d ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) AS rhr_30,
+               avg(tl)  OVER (ORDER BY d ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) AS tl_30
+        FROM daily
+    )
+    SELECT corr(tl_30, rhr_30) AS r, count(*) AS n,
+           avg(rhr_30) AS rhr_avg, avg(tl_30) AS tl_avg
+    FROM windowed
+    WHERE rhr_30 IS NOT NULL AND tl_30 IS NOT NULL
+    """
+    try:
+        row = duckdb.query(sql).fetchone()
+    except duckdb.Error:
+        return None
+    if not row or row[0] is None or row[1] is None or row[1] < 60:
+        return None
+    r, n, rhr_avg, tl_avg = row
+    if abs(r) < 0.15:
+        trend = "neutral"
+        actionable = "Long-term training volume isn't moving baseline RHR. Likely already adapted."
+    elif r < 0:
+        trend = "positive"  # negative correlation = good (more load → lower baseline)
+        actionable = (f"Long-term training drives baseline RHR DOWN (r={r:+.2f}, n={n}). "
+                      "Consistent volume is paying off cardiovascularly.")
+    else:
+        trend = "negative"
+        actionable = (f"Long-term high volume runs HIGHER baseline RHR (r={r:+.2f}, n={n}). "
+                      "Possible chronic overreach; consider deload phases.")
+    return {
+        "name":       "Chronic load → baseline RHR (30d windows)",
+        "n":          int(n),
+        "trend":      trend,
+        "summary":    f"r = {r:+.2f} across {int(n)} 30-day-windows · baseline RHR {rhr_avg:.1f}",
+        "actionable": actionable,
+        "r":          round(r, 2),
+    }
+
+
 def social_to_training(parquet_root: Path) -> Optional[dict]:
     """Did you train more or less in weeks with more social check-in events?"""
     s_glob = _samples_glob(parquet_root)
@@ -262,6 +437,9 @@ def build_correlations(parquet_root: Path) -> dict:
     out_corrs = []
     for fn in (workout_to_next_night_sleep,
                tl_to_next_day_rhr,
+               vigorous_to_deep_sleep,
+               sport_recovery_cost,
+               chronic_load_to_rhr,
                social_to_training):
         try:
             v = fn(parquet_root)
