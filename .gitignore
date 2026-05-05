@@ -39,6 +39,7 @@ output/web/js/data-vitals.js
 output/cross_refs.yaml
 output/training_context.md
 output/health_profile.json
+output/media.yaml
 
 # ── Logs may contain sample-specific info ──
 logs/

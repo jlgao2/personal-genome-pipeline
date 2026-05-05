@@ -2263,3 +2263,60 @@ body[data-active-tab="genome"]  .section[data-tab]:not([data-tab="genome"]) {
 .cal-open:hover { background: var(--accent-soft); }
 
 .goal-actions { grid-column: 1 / -1; margin-top: 0.4rem; }
+
+/* ── Media log (Plan tab) ── */
+.media-list { display: flex; flex-direction: column; gap: 1.4rem; }
+.media-bucket {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.media-bucket-title {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 0.7rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+}
+.media-bucket-count {
+  color: var(--fg-mute);
+  margin-left: 0.4em;
+}
+.media-row {
+  padding: 0.7rem 1.1rem;
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 0.4rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.media-bucket .media-row:last-child { border-bottom: none; }
+.media-type {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.22em;
+  color: var(--rune);
+  align-self: baseline;
+}
+.media-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--fg);
+}
+.media-author {
+  grid-column: 2;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.media-notes {
+  grid-column: 2;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--fg-dim);
+  line-height: 1.45;
+}

@@ -3,7 +3,7 @@
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
 } from './data.js';
-import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS, ADAPTED_SESSION, SOCIAL, CALENDAR } from './data-vitals.js';
+import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS, ADAPTED_SESSION, SOCIAL, CALENDAR, MEDIA } from './data-vitals.js';
 import { VITAL_TARGETS } from './vitals-targets.js';
 
 /* ── Render hero stats ── */
@@ -1027,6 +1027,66 @@ function renderCalendar() {
   `).join('');
 }
 
+/* ── Abstinences (non-consumption) — daily checkboxes ── */
+function renderAbstinences() {
+  const root = document.getElementById('abstinences-list');
+  if (!root) return;
+  const items = HEALTH_PROFILE?.abstinences || [];
+  if (items.length === 0) {
+    root.innerHTML = '<li class="prep-item"><span class="prep-text">No abstinences defined.</span></li>';
+    return;
+  }
+  const state = dailyState('abstinences');
+  root.innerHTML = items.map(it => {
+    const id = it.key || it.label;
+    const done = state.get(id);
+    return `<li class="prep-item ${done ? 'done' : ''}" data-id="${id}">
+      <span class="prep-box"></span>
+      <span class="prep-text">${it.label}</span>
+    </li>`;
+  }).join('');
+  root.querySelectorAll('.prep-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      state.set(id, !state.get(id));
+      el.classList.toggle('done', state.get(id));
+    });
+  });
+}
+
+/* ── Media log (Plan tab) — books, podcasts, films, etc. ── */
+function renderMedia() {
+  const root = document.getElementById('media-list');
+  if (!root) return;
+  const items = MEDIA || [];
+  if (items.length === 0) {
+    root.innerHTML = `<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">
+      No entries — edit <code>output/media.yaml</code> to log what you're consuming.</p>`;
+    return;
+  }
+  // Group by status
+  const order = ['in_progress', 'queued', 'finished', 'abandoned'];
+  const labels = { in_progress: 'Active', queued: 'Queued', finished: 'Finished', abandoned: 'Abandoned' };
+  const buckets = {};
+  for (const m of items) (buckets[m.status || 'finished'] ||= []).push(m);
+
+  root.innerHTML = order
+    .filter(k => buckets[k] && buckets[k].length > 0)
+    .map(k => `
+      <div class="media-bucket">
+        <div class="media-bucket-title">${labels[k]} <span class="media-bucket-count">${buckets[k].length}</span></div>
+        ${buckets[k].map(m => `
+          <article class="media-row">
+            <div class="media-type">${(m.type || 'media').toUpperCase()}</div>
+            <div class="media-title">${m.title || '(untitled)'}</div>
+            ${m.author ? `<div class="media-author">${m.author}</div>` : ''}
+            ${m.notes  ? `<div class="media-notes">${m.notes}</div>` : ''}
+          </article>
+        `).join('')}
+      </div>
+    `).join('');
+}
+
 /* ── Google Calendar template URL (no OAuth needed at use time) ──
  * Opens calendar.google.com prefilled; user clicks Save in their browser.
  */
@@ -1504,6 +1564,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHeroCard();
   renderCalendar();
   renderReachOutToday();
+  renderAbstinences();
+  renderMedia();
   renderTodaySession();
   renderAdherenceChip();
   renderPrepChecklist();

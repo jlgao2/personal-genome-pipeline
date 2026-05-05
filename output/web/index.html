@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Personal genome report — pharmacogenomics, disease risk, carrier status, nutrition, with clinical-record cross-reference." />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Genome // Report</title>
+  <title>Frontal Lobe</title>
 
   <link href="https://api.fontshare.com/v2/css?f[]=space-grotesk@300,400,500,700&f[]=space-mono@400,700&display=swap" rel="stylesheet" />
 
@@ -17,8 +17,8 @@
   <!-- Left rail (sidebar nav) -->
   <aside class="rail">
     <div class="rail-header">
-      GENOME<span class="accent">//</span>REPORT
-      <div class="rail-header-sub">SUBJECT 5405929</div>
+      FRONTAL<span class="accent">·</span>LOBE
+      <div class="rail-header-sub">EXECUTIVE FUNCTION ENGINE</div>
     </div>
 
     <nav class="rail-tabs">
@@ -45,6 +45,7 @@
         <li><button class="nav-btn" data-section="today-session"   data-num="·">Session</button></li>
         <li><button class="nav-btn" data-section="prep-checklist"  data-num="·">Prep</button></li>
         <li><button class="nav-btn" data-section="stack"           data-num="·">Stack</button></li>
+        <li><button class="nav-btn" data-section="abstinences"     data-num="·">Frontal lobe</button></li>
         <li><button class="nav-btn" data-section="med-alerts"      data-num="·">Med alerts</button></li>
       </ul>
     </nav>
@@ -56,6 +57,7 @@
         <li><button class="nav-btn" data-section="goals"          data-num="·">Goals</button></li>
         <li><button class="nav-btn" data-section="action-loop"    data-num="·">Action Loop</button></li>
         <li><button class="nav-btn" data-section="roadmap"        data-num="·">Roadmap</button></li>
+        <li><button class="nav-btn" data-section="media"          data-num="·">Media</button></li>
         <li><button class="nav-btn" data-section="streak"         data-num="·">Streak</button></li>
         <li><button class="nav-btn" data-section="weekly-recap"   data-num="·">Recap</button></li>
         <li><button class="nav-btn" data-section="vitals"         data-num="·">Vitals</button></li>
@@ -157,6 +159,17 @@
     <ul class="prep-list" id="prep-list"></ul>
   </section>
 
+  <!-- Non-consumption (today's abstinences) -->
+  <section class="section" id="abstinences" data-tab="interventions">
+    <p class="section-kicker">Today · non-consumption</p>
+    <h2 class="section-title">Frontal lobe</h2>
+    <p class="section-lead">
+      What you did <em>not</em> consume today. Tap each as the day progresses.
+      Resets at midnight; aggregates flow into the streak grid.
+    </p>
+    <ul class="prep-list" id="abstinences-list"></ul>
+  </section>
+
   <!-- Supplement Stack — timing-grouped today -->
   <section class="section" id="stack" data-tab="interventions">
     <p class="section-kicker">Today · supplement protocol</p>
@@ -197,6 +210,17 @@
     <p class="section-kicker">Now → 8w → 3mo → ongoing</p>
     <h2 class="section-title">Roadmap</h2>
     <div class="roadmap" id="roadmap-grid"></div>
+  </section>
+
+  <!-- Media log -->
+  <section class="section" id="media" data-tab="plan">
+    <p class="section-kicker">Consumption · books / podcasts / films</p>
+    <h2 class="section-title">Media</h2>
+    <p class="section-lead">
+      What you've chosen to consume. Edit <code>output/media.yaml</code> to
+      add or update entries — this is the deliberate-attention log.
+    </p>
+    <div class="media-list" id="media-list"></div>
   </section>
 
   <!-- Streak / contribution graph -->
@@ -497,7 +521,7 @@
     </div>
     <div class="footer-body">
       <div>
-        <p class="footer-eyebrow">GENOME<span class="accent">//</span>REPORT</p>
+        <p class="footer-eyebrow">FRONTAL<span class="accent">·</span>LOBE</p>
         <p id="meta-info" class="u-mono u-dim" style="font-size:0.7rem; margin-top:0.5rem; letter-spacing:0.1em;"></p>
       </div>
       <p class="footer-sub">
