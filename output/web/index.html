@@ -53,6 +53,7 @@
         <li><button class="nav-btn" data-section="vision"         data-num="·">Vision</button></li>
         <li><button class="nav-btn" data-section="goals"          data-num="·">Goals</button></li>
         <li><button class="nav-btn" data-section="action-loop"    data-num="·">Action Loop</button></li>
+        <li><button class="nav-btn" data-section="correlations"   data-num="·">Correlations</button></li>
         <li><button class="nav-btn" data-section="roadmap"        data-num="·">Roadmap</button></li>
         <li><button class="nav-btn" data-section="media"          data-num="·">Media</button></li>
         <li><button class="nav-btn" data-section="streak"         data-num="·">Streak</button></li>
@@ -175,6 +176,20 @@
       Gray = awaiting data.
     </p>
     <div class="action-loop-grid" id="action-loop-grid"></div>
+  </section>
+
+  <!-- Cross-source correlations -->
+  <section class="section" id="correlations" data-tab="plan">
+    <p class="section-kicker">What the data is telling you</p>
+    <h2 class="section-title">Correlations</h2>
+    <p class="section-lead">
+      Patterns across sleep, training, and social signals over the
+      window you've been tracking. Each pattern's interpretation
+      includes the sample size — small n = thin signal.
+    </p>
+    <div class="correlations-list" id="correlations-list"></div>
+    <h3 class="section-subtitle">Day-of-week patterns</h3>
+    <div class="dow-grid" id="dow-grid"></div>
   </section>
 
   <!-- Block roadmap (responsive: timeline on desktop, sections on mobile) -->

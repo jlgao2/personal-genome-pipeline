@@ -3,7 +3,7 @@
 import {
   META, STATS, SECTIONS, FINDINGS, CROSSREF, LABS, PCP_AGENDA, PRS
 } from './data.js';
-import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS, ADAPTED_SESSION, SOCIAL, CALENDAR, MEDIA } from './data-vitals.js';
+import { VITALS, WORKOUTS, ACTION_LOOP, HEALTH_PROFILE, MED_ALERTS, ADAPTED_SESSION, SOCIAL, CALENDAR, MEDIA, CORRELATIONS } from './data-vitals.js';
 import { VITAL_TARGETS } from './vitals-targets.js';
 
 /* ── Render hero stats ── */
@@ -743,6 +743,76 @@ function renderAdherenceChip() {
   } else {
     slot.innerHTML = `<span class="adherence-chip" data-status="missed">✗ no match yet</span>`;
   }
+}
+
+/* ── Correlations panel (cross-source patterns) ── */
+function trendColor(t) {
+  if (t === 'positive') return 'var(--rune)';
+  if (t === 'negative') return 'var(--warn)';
+  return 'var(--fg-dim)';
+}
+
+function renderCorrelations() {
+  const root = document.getElementById('correlations-list');
+  if (!root) return;
+  const corr = CORRELATIONS || {};
+  const list = corr.correlations || [];
+  if (list.length === 0) {
+    root.innerHTML = '<p style="padding:1rem; font-family:var(--font-mono); font-size:0.65rem; color:var(--fg-dim);">No correlations yet — need ≥30 days of data.</p>';
+  } else {
+    root.innerHTML = list.map(c => `
+      <article class="corr-card" data-trend="${c.trend}">
+        <div class="corr-header">
+          <span class="corr-name">${c.name}</span>
+          <span class="corr-trend" style="color:${trendColor(c.trend)}">${(c.trend||'').toUpperCase()}</span>
+        </div>
+        <div class="corr-summary">${c.summary || ''}</div>
+        <div class="corr-actionable">${c.actionable || ''}</div>
+        <div class="corr-meta">n = ${c.n}${c.r != null ? ` · r = ${c.r >= 0 ? '+' : ''}${c.r}` : ''}</div>
+      </article>
+    `).join('');
+  }
+
+  // DOW grid
+  const dowRoot = document.getElementById('dow-grid');
+  if (!dowRoot) return;
+  const dow = corr.day_of_week || [];
+  if (dow.length === 0) {
+    dowRoot.innerHTML = '';
+    return;
+  }
+  // Find min/max for heatmap normalization
+  const sleep = dow.map(d => d.sleep).filter(v => v != null);
+  const rhr   = dow.map(d => d.rhr).filter(v => v != null);
+  const tl    = dow.map(d => d.tl).filter(v => v != null);
+  const minS = Math.min(...sleep), maxS = Math.max(...sleep);
+  const minR = Math.min(...rhr),   maxR = Math.max(...rhr);
+  const maxT = Math.max(...tl);
+
+  const cellShade = (v, vmin, vmax, invert = false) => {
+    if (v == null || vmax === vmin) return 0;
+    const t = (v - vmin) / (vmax - vmin);
+    return invert ? 1 - t : t;
+  };
+
+  dowRoot.innerHTML = `
+    <div class="dow-row dow-header">
+      <div class="dow-label">DAY</div>
+      <div class="dow-cell-label">SLEEP</div>
+      <div class="dow-cell-label">RHR</div>
+      <div class="dow-cell-label">TL</div>
+      <div class="dow-cell-label">WK#</div>
+    </div>
+    ${dow.map(d => `
+      <div class="dow-row">
+        <div class="dow-label">${d.dow}</div>
+        <div class="dow-cell" style="background: rgba(125, 240, 168, ${cellShade(d.sleep, minS, maxS) * 0.4})">${d.sleep != null ? Math.round(d.sleep) : '—'}</div>
+        <div class="dow-cell" style="background: rgba(255, 58, 74, ${cellShade(d.rhr, minR, maxR) * 0.35})">${d.rhr != null ? d.rhr.toFixed(1) : '—'}</div>
+        <div class="dow-cell" style="background: rgba(94, 226, 255, ${cellShade(d.tl, 0, maxT) * 0.35})">${d.tl != null ? d.tl.toFixed(1) : '—'}</div>
+        <div class="dow-cell">${d.workouts}</div>
+      </div>
+    `).join('')}
+  `;
 }
 
 /* ── Vision statement (hand-authored) ── */
@@ -1746,6 +1816,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // PLAN tab
   renderVision();
   renderGoals();
+  renderCorrelations();
   renderRoadmap();
   renderStreak();
   renderWeeklyRecap();

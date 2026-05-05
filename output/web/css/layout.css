@@ -2493,3 +2493,115 @@ body[data-active-tab="genome"]  .section[data-tab]:not([data-tab="genome"]) {
 }
 .abstinence-pill.is-done .ap-mark { color: var(--rune); }
 .abstinence-pill.empty { cursor: default; opacity: 0.5; }
+
+/* ════════ CORRELATIONS PANEL ════════ */
+.section-subtitle {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--fg-dim);
+  margin: 1.5rem 0 0.5rem;
+}
+.correlations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.corr-card {
+  background: var(--bg-card);
+  padding: 0.85rem 1.1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border-left: 2px solid var(--border);
+}
+.corr-card[data-trend="positive"] { border-left-color: var(--rune); }
+.corr-card[data-trend="negative"] { border-left-color: var(--warn); }
+.corr-card[data-trend="neutral"]  { border-left-color: var(--fg-mute); }
+.corr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.corr-name {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--fg);
+}
+.corr-trend {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+}
+.corr-summary {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: var(--fg-dim);
+}
+.corr-actionable {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.88rem;
+  color: var(--fg);
+  line-height: 1.45;
+}
+.corr-meta {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  margin-top: 0.25rem;
+}
+
+/* DOW heatmap grid */
+.dow-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.dow-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+}
+.dow-row.dow-header { background: var(--bg-card); }
+.dow-row.dow-header .dow-label,
+.dow-row.dow-header .dow-cell-label {
+  background: var(--bg-card);
+  padding: 0.5rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  text-align: center;
+}
+.dow-row.dow-header .dow-label { text-align: left; }
+.dow-label {
+  background: var(--bg-card);
+  padding: 0.6rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.dow-cell {
+  background: var(--bg-card);
+  padding: 0.6rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--fg);
+  text-align: center;
+}
