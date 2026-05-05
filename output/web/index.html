@@ -40,10 +40,8 @@
       <span class="rail-section-label">Today</span>
       <ul class="nav-sections">
         <li><button class="nav-btn" data-section="hero-card"        data-num="·">Now</button></li>
-        <li><button class="nav-btn" data-section="calendar-next"   data-num="·">Calendar</button></li>
-        <li><button class="nav-btn" data-section="reach-out-today" data-num="·">Reach out</button></li>
+        <li><button class="nav-btn" data-section="timeline"        data-num="·">Timeline</button></li>
         <li><button class="nav-btn" data-section="today-session"   data-num="·">Session</button></li>
-        <li><button class="nav-btn" data-section="stack"           data-num="·">Stack</button></li>
         <li><button class="nav-btn" data-section="abstinences"     data-num="·">Frontal lobe</button></li>
         <li><button class="nav-btn" data-section="med-alerts"      data-num="·">Med alerts</button></li>
       </ul>
@@ -130,43 +128,25 @@
     <div class="hero-card" id="hero-card-body"></div>
   </section>
 
-  <!-- Next — upcoming Google Calendar events -->
-  <section class="section" id="calendar-next" data-tab="interventions">
-    <p class="section-kicker">Today · calendar</p>
-    <h2 class="section-title">Next</h2>
-    <div class="calendar-list" id="calendar-list"></div>
+  <!-- Today's timeline — unified chronological view (calendar + supps + workout + reach-out) -->
+  <section class="section" id="timeline" data-tab="interventions">
+    <p class="section-kicker">Today · chronological</p>
+    <h2 class="section-title">Timeline</h2>
+    <ul class="timeline" id="timeline-list"></ul>
   </section>
 
-  <!-- Reach out today — top 3 attention-needing people -->
-  <section class="section" id="reach-out-today" data-tab="interventions">
-    <p class="section-kicker">Today · relationships</p>
-    <h2 class="section-title">Reach out</h2>
-    <div class="reach-out-list" id="reach-out-today-list"></div>
-  </section>
-
-  <!-- Today's Session — exercises + warmup + rehab -->
+  <!-- Today's Session — full exercise breakdown (deep view) -->
   <section class="section" id="today-session" data-tab="interventions">
-    <p class="section-kicker">Today · session</p>
+    <p class="section-kicker">When it's time · full breakdown</p>
     <h2 class="section-title">Session <span id="session-adherence"></span></h2>
     <div class="session-grid" id="session-grid"></div>
   </section>
 
-  <!-- Non-consumption (today's abstinences) -->
+  <!-- Non-consumption (all-day abstinences, sticky pill bar) -->
   <section class="section" id="abstinences" data-tab="interventions">
-    <p class="section-kicker">Today · non-consumption</p>
+    <p class="section-kicker">All-day · non-consumption</p>
     <h2 class="section-title">Frontal lobe</h2>
-    <p class="section-lead">
-      What you did <em>not</em> consume today. Tap each as the day progresses.
-      Resets at midnight; aggregates flow into the streak grid.
-    </p>
-    <ul class="prep-list" id="abstinences-list"></ul>
-  </section>
-
-  <!-- Supplement Stack — timing-grouped today -->
-  <section class="section" id="stack" data-tab="interventions">
-    <p class="section-kicker">Today · supplement protocol</p>
-    <h2 class="section-title">Stack</h2>
-    <div class="stack-grid" id="stack-grid"></div>
+    <ul class="abstinence-pills" id="abstinences-list"></ul>
   </section>
 
   <!-- PLAN & VISION tab -->

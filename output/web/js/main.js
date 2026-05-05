@@ -1037,31 +1037,196 @@ function renderCalendar() {
   `).join('');
 }
 
-/* ── Abstinences (non-consumption) — daily checkboxes ── */
+/* ── Abstinences as compact pill row (all-day, daily reset) ── */
 function renderAbstinences() {
   const root = document.getElementById('abstinences-list');
   if (!root) return;
   const items = HEALTH_PROFILE?.abstinences || [];
   if (items.length === 0) {
-    root.innerHTML = '<li class="prep-item"><span class="prep-text">No abstinences defined.</span></li>';
+    root.innerHTML = '<li class="abstinence-pill empty">No abstinences defined.</li>';
     return;
   }
   const state = dailyState('abstinences');
   root.innerHTML = items.map(it => {
     const id = it.key || it.label;
     const done = state.get(id);
-    return `<li class="prep-item ${done ? 'done' : ''}" data-id="${id}">
-      <span class="prep-box"></span>
-      <span class="prep-text">${it.label}</span>
+    return `<li class="abstinence-pill ${done ? 'is-done' : ''}" data-id="${id}" role="button" tabindex="0">
+      <span class="ap-mark">${done ? '✓' : '·'}</span><span class="ap-label">${it.label}</span>
     </li>`;
   }).join('');
-  root.querySelectorAll('.prep-item').forEach(el => {
+  root.querySelectorAll('.abstinence-pill').forEach(el => {
     el.addEventListener('click', () => {
       const id = el.dataset.id;
       state.set(id, !state.get(id));
-      el.classList.toggle('done', state.get(id));
+      el.classList.toggle('is-done', state.get(id));
+      el.querySelector('.ap-mark').textContent = state.get(id) ? '✓' : '·';
     });
   });
+}
+
+/* ── Unified Today timeline ──
+ * Merges calendar events, scheduled supplements, workout, reach-outs into
+ * a single chronological list. Past items dim. Current/upcoming bright.
+ * Future-far items faint. Each row is tap-to-act (mark taken / done).
+ */
+const TIMING_TO_HOUR = {
+  'morning':                7,
+  '30-60 min pre-workout':  10,  // assumes ~11am workout
+  'with lunch':             12,
+  'afternoon':              15,
+  'evening':                19,
+  'before bed':             22,
+};
+const WORKOUT_HOUR = 11;  // typical workout time anchor
+
+function buildTimelineItems() {
+  const items = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(today); todayEnd.setHours(23, 59, 59, 999);
+
+  // Calendar events (today only, from the GCal feed)
+  for (const e of (CALENDAR || [])) {
+    if (!e.start) continue;
+    const start = new Date(e.start);
+    if (start < today || start > todayEnd) continue;
+    items.push({
+      kind: 'calendar',
+      time: start,
+      title: e.summary || '(no title)',
+      detail: e.location || '',
+      url: e.url,
+    });
+  }
+
+  // Stack supplements — timing maps to a clock hour
+  const stackState = dailyState('stack');
+  for (const s of (HEALTH_PROFILE?.supplement_stack || [])) {
+    const hour = TIMING_TO_HOUR[s.timing];
+    if (hour == null) continue;
+    const t = new Date(today); t.setHours(hour, 0, 0, 0);
+    items.push({
+      kind: 'supp',
+      time: t,
+      title: s.name,
+      detail: s.dose ? `${s.dose} · ${s.rationale || ''}`.trim().replace(/·\s*$/, '') : (s.rationale || ''),
+      stateKey: 'stack',
+      stateId: s.name,
+      done: stackState.get(s.name),
+      with_food: s.with_food,
+    });
+  }
+
+  // Workout — single anchor row at workout hour
+  const dayKey = todaysProgramKey();
+  const day = HEALTH_PROFILE?.daily_protocol?.[dayKey];
+  if (day && dayKey !== 'Day 7') {
+    const t = new Date(today); t.setHours(WORKOUT_HOUR, 0, 0, 0);
+    const adapted = ADAPTED_SESSION;
+    const tl = adapted?.traffic_light || 'green';
+    items.push({
+      kind: 'workout',
+      time: t,
+      title: `${dayKey} · ${day.session}`,
+      detail: adapted ? `${tl.toUpperCase()} · ${Math.round((adapted.intensity_modifier ?? 1) * 100)}% intensity` : '',
+      url: '#today-session',
+      pill: tl,
+    });
+  }
+
+  // Reach out — pin to evening unless already marked done
+  const reachState = dailyState('reachout');
+  const top = ((SOCIAL || {}).reach_out || []).filter(p => !reachState.get(p.id || p.name));
+  if (top.length > 0) {
+    const t = new Date(today); t.setHours(20, 0, 0, 0);
+    const p = top[0];
+    items.push({
+      kind: 'reach',
+      time: t,
+      title: `Reach out: ${p.name}`,
+      detail: p.about_what || `${p.days_since_last}d since last`,
+      stateKey: 'reachout',
+      stateId: p.id || p.name,
+      done: false,
+    });
+  }
+
+  // Sort chronologically
+  items.sort((a, b) => a.time - b.time);
+  return items;
+}
+
+function classifyTime(t) {
+  const now = Date.now();
+  const ms = t.getTime();
+  if (ms < now - 30 * 60_000) return 'past';
+  if (ms < now + 90 * 60_000) return 'now';
+  if (ms < now + 6 * 3600_000) return 'soon';
+  return 'far';
+}
+
+function fmtTime(t) {
+  let h = t.getHours();
+  const m = t.getMinutes();
+  const ampm = h >= 12 ? 'pm' : 'am';
+  h = h % 12 || 12;
+  return `${h}:${String(m).padStart(2, '0')}${ampm}`;
+}
+
+function renderTimeline() {
+  const root = document.getElementById('timeline-list');
+  if (!root) return;
+  const items = buildTimelineItems();
+  if (items.length === 0) {
+    root.innerHTML = '<li class="timeline-row empty"><span class="tl-time">—</span><span class="tl-content">No timeline items today.</span></li>';
+    return;
+  }
+  root.innerHTML = items.map(it => {
+    const cls = classifyTime(it.time);
+    const time = fmtTime(it.time);
+    const done = it.done ? 'is-done' : '';
+    const stateAttr = it.stateKey ? ` data-state-key="${it.stateKey}" data-state-id="${(it.stateId || '').replace(/"/g,'&quot;')}"` : '';
+    const tappable = it.stateKey ? 'role="button" tabindex="0"' : '';
+    const pill = it.pill ? `<span class="tl-pill" data-light="${it.pill}">${it.pill.toUpperCase()}</span>` : '';
+    const url = it.url ? `<a class="tl-open" href="${it.url}">↗</a>` : '';
+    return `
+      <li class="timeline-row" data-when="${cls}" data-kind="${it.kind}" ${tappable}${stateAttr}>
+        <span class="tl-time">${time}</span>
+        <span class="tl-mark"></span>
+        <div class="tl-content ${done}">
+          <div class="tl-row-top">
+            <span class="tl-title">${it.title}</span>
+            ${pill}${url}
+          </div>
+          ${it.detail ? `<div class="tl-detail">${it.detail}</div>` : ''}
+        </div>
+      </li>
+    `;
+  }).join('');
+
+  // Wire stateful taps
+  root.querySelectorAll('.timeline-row[role="button"]').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('a')) return;  // let links through
+      const stateKey = el.dataset.stateKey;
+      const id = el.dataset.stateId;
+      if (!stateKey || !id) return;
+      const state = dailyState(stateKey);
+      state.set(id, !state.get(id));
+      renderTimeline();
+    });
+  });
+
+  // Scroll-reveal animation
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) {
+        e.target.classList.add('tl-reveal');
+        io.unobserve(e.target);
+      }
+    }
+  }, { rootMargin: '-10% 0px' });
+  root.querySelectorAll('.timeline-row').forEach(r => io.observe(r));
 }
 
 /* ── Media log (Plan tab) — books, podcasts, films, etc. ── */
@@ -1572,13 +1737,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // INTERVENTIONS tab
   renderActionLoop();
   renderHeroCard();
-  renderCalendar();
-  renderReachOutToday();
+  renderTimeline();        // unified chronological surface (replaces Calendar/Stack/ReachOutToday on Now)
   renderAbstinences();
   renderMedia();
-  renderTodaySession();
+  renderTodaySession();    // deep session breakdown (still useful pre-workout)
   renderAdherenceChip();
-  renderStack();
   renderMedAlerts();
   // PLAN tab
   renderVision();

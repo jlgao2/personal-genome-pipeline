@@ -2328,3 +2328,168 @@ body[data-active-tab="genome"]  .section[data-tab]:not([data-tab="genome"]) {
 .session-block-prep .session-block-title {
   color: var(--accent);
 }
+
+/* ════════ UNIFIED TODAY TIMELINE ════════ */
+.timeline {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  position: relative;
+}
+/* Vertical track running through the time column */
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 84px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+.timeline-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 80px 14px 1fr;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  cursor: default;
+  /* Scroll-reveal initial state */
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.35s var(--ease-out-expo, ease-out),
+              transform 0.45s var(--ease-out-expo, ease-out);
+}
+.timeline-row.tl-reveal {
+  opacity: 1;
+  transform: none;
+}
+.timeline-row:last-child { border-bottom: none; }
+.timeline-row[role="button"] { cursor: pointer; }
+.timeline-row[role="button"]:hover { background: rgba(94, 226, 255, 0.04); }
+
+.timeline-row .tl-time {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  align-self: center;
+}
+.timeline-row .tl-mark {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-card);
+  align-self: center;
+  justify-self: center;
+  z-index: 1;
+}
+.timeline-row .tl-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.timeline-row .tl-row-top {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.timeline-row .tl-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--fg);
+  flex: 1;
+  min-width: 0;
+}
+.timeline-row .tl-detail {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--fg-dim);
+  line-height: 1.45;
+}
+
+/* Time-band tinting: past dim, now bright, soon normal, far very faint */
+.timeline-row[data-when="past"]    { opacity: 0.4; }
+.timeline-row[data-when="past"]    .tl-mark { background: var(--fg-mute); }
+.timeline-row[data-when="past"]    .tl-time { color: var(--fg-mute); }
+.timeline-row[data-when="now"]     .tl-mark { background: var(--rune); box-shadow: 0 0 0 4px rgba(125,240,168,0.18); }
+.timeline-row[data-when="now"]     .tl-time { color: var(--rune); }
+.timeline-row[data-when="soon"]    .tl-mark { background: var(--accent); }
+.timeline-row[data-when="far"]     { opacity: 0.55; }
+.timeline-row[data-when="far"]     .tl-time, .timeline-row[data-when="far"] .tl-mark { color: var(--fg-dim); background: var(--fg-mute); }
+.timeline-row.tl-reveal[data-when="past"] { opacity: 0.4; }
+.timeline-row.tl-reveal[data-when="far"]  { opacity: 0.55; }
+
+/* Done state on tappable rows */
+.timeline-row .tl-content.is-done .tl-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--rune);
+  color: var(--fg-dim);
+}
+.timeline-row .tl-content.is-done .tl-detail { color: var(--fg-mute); }
+.timeline-row[data-kind="supp"]    .tl-mark { background: var(--accent-deep); }
+.timeline-row[data-kind="workout"] .tl-mark { background: var(--rune); }
+.timeline-row[data-kind="reach"]   .tl-mark { background: var(--accent-bright); }
+
+/* Inline pill (workout traffic light) */
+.tl-pill {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+}
+.tl-pill[data-light="green"] { color: var(--rune); }
+.tl-pill[data-light="amber"] { color: var(--accent); }
+.tl-pill[data-light="red"]   { color: var(--warn); }
+
+.tl-open {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ════════ ABSTINENCE PILL BAR ════════ */
+.abstinence-pills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.abstinence-pill {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 6px 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.abstinence-pill:hover { background: rgba(94, 226, 255, 0.04); color: var(--fg); }
+.abstinence-pill .ap-mark {
+  font-size: 0.7rem;
+  color: var(--accent);
+}
+.abstinence-pill.is-done {
+  color: var(--rune);
+  border-color: var(--rune);
+}
+.abstinence-pill.is-done .ap-mark { color: var(--rune); }
+.abstinence-pill.empty { cursor: default; opacity: 0.5; }
