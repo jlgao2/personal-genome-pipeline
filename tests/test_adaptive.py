@@ -20,6 +20,9 @@ from pipeline.adaptive import (
     rule_apoe_e4_sleep_priority,
     rule_high_cost_sport_yesterday,
     rule_thursday_caution,
+    rule_saturday_peak_load_warning,
+    rule_yoga_cadence_friday,
+    rule_sleep_gap_to_target,
 )
 
 # ─── Helpers ────────────────────────────────────────────────────────────────
@@ -306,3 +309,113 @@ def test_adapt_today_green_when_clean():
     a = adapt_today(sig)
     assert a["traffic_light"] == "green"
     assert a["intensity_modifier"] == 1.0
+
+
+# ─── Saturday peak-load warning (data-driven, day_of_week) ──────────────────
+
+def test_saturday_peak_load_fires_on_day_6():
+    sig = _sig(day="Day 6")
+    a = empty_adapted(sig)
+    rule_saturday_peak_load_warning(sig, a)
+    assert "saturday_peak_load_warning" in a["rules_fired"]
+    assert "Saturday" in a["notes"][0]
+
+
+def test_saturday_peak_load_quiet_on_other_days():
+    for day in ("Day 1", "Day 5", "Day 7"):
+        sig = _sig(day=day)
+        a = empty_adapted(sig)
+        rule_saturday_peak_load_warning(sig, a)
+        assert "saturday_peak_load_warning" not in a["rules_fired"], f"fired on {day}"
+
+
+# ─── Yoga cadence Friday (goal-driven, weekly compliance) ────────────────────
+
+def test_yoga_cadence_friday_fires_when_zero_yoga_in_7d():
+    sig = _sig(day="Day 5", sport_spread_last_7d={"CYCLING": 3, "RUNNING": 1})
+    a = empty_adapted(sig)
+    rule_yoga_cadence_friday(sig, a)
+    assert "yoga_cadence_friday" in a["rules_fired"]
+
+
+def test_yoga_cadence_friday_quiet_when_yoga_already_done():
+    sig = _sig(day="Day 5", sport_spread_last_7d={"YOGA": 1, "CYCLING": 3})
+    a = empty_adapted(sig)
+    rule_yoga_cadence_friday(sig, a)
+    assert "yoga_cadence_friday" not in a["rules_fired"]
+
+
+def test_yoga_cadence_friday_case_insensitive():
+    sig = _sig(day="Day 5", sport_spread_last_7d={"yoga_flow": 1})
+    a = empty_adapted(sig)
+    rule_yoga_cadence_friday(sig, a)
+    assert "yoga_cadence_friday" not in a["rules_fired"]
+
+
+def test_yoga_cadence_friday_quiet_on_non_friday():
+    sig = _sig(day="Day 1", sport_spread_last_7d={})
+    a = empty_adapted(sig)
+    rule_yoga_cadence_friday(sig, a)
+    assert "yoga_cadence_friday" not in a["rules_fired"]
+
+
+# ─── Sleep gap to target (goal-driven) ───────────────────────────────────────
+
+_SLEEP_GOAL = {
+    "goals": [{
+        "name": "Sleep average (7d rolling)",
+        "target": 7.5,
+        "units": "hours",
+        "direction": "increase",
+        "category": "recovery",
+    }],
+}
+
+
+def test_sleep_gap_fires_when_behind_target():
+    sig = _sig(sleep_min_last_night=300, profile=_SLEEP_GOAL)
+    a = empty_adapted(sig)
+    rule_sleep_gap_to_target(sig, a)
+    assert "sleep_gap_to_target" in a["rules_fired"]
+    msg = a["notes"][0]
+    assert "150 min behind" in msg
+    assert "450" in msg  # target rendered in minutes
+
+
+def test_sleep_gap_quiet_when_at_target():
+    sig = _sig(sleep_min_last_night=460, profile=_SLEEP_GOAL)
+    a = empty_adapted(sig)
+    rule_sleep_gap_to_target(sig, a)
+    assert "sleep_gap_to_target" not in a["rules_fired"]
+
+
+def test_sleep_gap_quiet_when_within_30min():
+    sig = _sig(sleep_min_last_night=425, profile=_SLEEP_GOAL)  # 25 min behind
+    a = empty_adapted(sig)
+    rule_sleep_gap_to_target(sig, a)
+    assert "sleep_gap_to_target" not in a["rules_fired"]
+
+
+def test_sleep_gap_quiet_with_no_goal():
+    sig = _sig(sleep_min_last_night=300, profile={"goals": []})
+    a = empty_adapted(sig)
+    rule_sleep_gap_to_target(sig, a)
+    assert "sleep_gap_to_target" not in a["rules_fired"]
+
+
+def test_sleep_gap_quiet_when_no_sleep_data():
+    sig = _sig(profile=_SLEEP_GOAL)  # no sleep_min_last_night
+    a = empty_adapted(sig)
+    rule_sleep_gap_to_target(sig, a)
+    assert "sleep_gap_to_target" not in a["rules_fired"]
+
+
+def test_sleep_gap_handles_minutes_units():
+    profile = {"goals": [{
+        "name": "Sleep avg", "target": 450, "units": "min",
+        "category": "recovery",
+    }]}
+    sig = _sig(sleep_min_last_night=300, profile=profile)
+    a = empty_adapted(sig)
+    rule_sleep_gap_to_target(sig, a)
+    assert "sleep_gap_to_target" in a["rules_fired"]

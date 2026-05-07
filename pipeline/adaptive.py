@@ -393,6 +393,80 @@ def rule_thursday_caution(sig: Signals, adapted: dict) -> None:
     adapted["rules_fired"].append("thursday_caution")
 
 
+def rule_saturday_peak_load_warning(sig: Signals, adapted: dict) -> None:
+    """Saturday (Day 6) is the user's historical peak-TL day per the
+    day_of_week summary (avg TL ~16 vs Mon's ~6, ~3× weekday). On Day 6
+    surface that load context so today's session is paced for it, not stacked
+    on top of fatigue from a hard week."""
+    if sig.program_day != "Day 6":
+        return
+    adapted["notes"].append(
+        "Saturday is your historical peak-load day (avg TL 16, ~3× weekday). "
+        "Hydrate, carb-load, and pace intensity vs the prescribed."
+    )
+    adapted["rules_fired"].append("saturday_peak_load_warning")
+
+
+def rule_yoga_cadence_friday(sig: Signals, adapted: dict) -> None:
+    """Yoga is the weekly compliance lever (Day 5 prescribed). If the user
+    hasn't done yoga in the last 7 days, frame today as the weekly checkbox —
+    "let the easy yes happen" is more useful than another intensity nudge."""
+    if sig.program_day != "Day 5":
+        return
+    spread = sig.sport_spread_last_7d or {}
+    yoga_count = sum(v for k, v in spread.items() if "yoga" in (k or "").lower())
+    if yoga_count == 0:
+        adapted["notes"].append(
+            "No yoga in the last 7 days — today (Day 5) is your weekly compliance. "
+            "Let it be the easy yes."
+        )
+        adapted["rules_fired"].append("yoga_cadence_friday")
+
+
+def _sleep_goal_minutes(profile: dict) -> Optional[float]:
+    """Locate a sleep target in the goals list and return it in minutes.
+    Returns None if no sleep goal is configured (don't fire the gap rule)."""
+    for g in (profile or {}).get("goals") or []:
+        name = (g.get("name") or "").lower()
+        cat  = (g.get("category") or "").lower()
+        if "sleep" not in name and cat != "sleep" and cat != "recovery":
+            continue
+        if "sleep" not in name:   # category=recovery without "sleep" in name → skip
+            continue
+        target = g.get("target")
+        units  = (g.get("units") or "").lower()
+        if target is None:
+            return None
+        if units in ("h", "hour", "hours", "hr", "hrs"):
+            return float(target) * 60
+        if units in ("min", "minute", "minutes"):
+            return float(target)
+        # Heuristic for unitless: <24 → hours, ≥24 → minutes
+        return float(target) * 60 if float(target) < 24 else float(target)
+    return None
+
+
+def rule_sleep_gap_to_target(sig: Signals, adapted: dict) -> None:
+    """Surface the gap between last night's sleep and the user's stated target.
+    Distinct from rule_low_sleep (which handles severity / traffic light) — this
+    one frames the gap against the goal so the daily nudge is goal-aware. Fires
+    when behind target by ≥30 min and a sleep goal is configured."""
+    if sig.sleep_min_last_night is None:
+        return
+    target_min = _sleep_goal_minutes(sig.profile)
+    if target_min is None:
+        return
+    gap = target_min - sig.sleep_min_last_night
+    if gap < 30:
+        return
+    adapted["notes"].append(
+        f"Sleep gap: target {int(target_min)} min, last night "
+        f"{int(sig.sleep_min_last_night)} min ({int(gap)} min behind). "
+        "Bedtime earlier tonight."
+    )
+    adapted["rules_fired"].append("sleep_gap_to_target")
+
+
 def rule_sleep_streak_low(sig: Signals, adapted: dict) -> None:
     if sig.sleep_min_last_night is not None and sig.sleep_min_last_night < 360:
         # already covered by rule_low_sleep; this rule pushes Day 5 sooner
@@ -462,6 +536,9 @@ RULES: list[Callable[[Signals, dict], None]] = [
     rule_low_body_battery,
     rule_high_cost_sport_yesterday,   # data-driven (sport_recovery_cost)
     rule_thursday_caution,             # data-driven (day_of_week)
+    rule_saturday_peak_load_warning,   # data-driven (day_of_week)
+    rule_yoga_cadence_friday,          # goal-driven (weekly yoga)
+    rule_sleep_gap_to_target,          # goal-driven (sleep target)
     rule_peroneal_no_running,
     rule_peroneal_swap_lunges,
     rule_hip_no_deep_squat,
