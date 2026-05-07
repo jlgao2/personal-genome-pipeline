@@ -32,6 +32,7 @@ output/pharmcat/
 output/action_plan.md
 output/genetic_clinical_correlation.md
 output/README.md
+output/ios_export/
 
 # ── Dashboard data (contains personal findings — use data.example.js) ──
 output/web/js/data.js
