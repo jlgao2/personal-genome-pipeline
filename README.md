@@ -177,6 +177,40 @@ data/imputed_grch38_r2_0.8.vcf.gz                (~9M variants, R²≥0.8)
 
 ---
 
+## iOS sync (Prefrontal Cortex companion app)
+
+The companion app at [`personal-data-ios`](https://github.com/jlgao2/personal-data-ios)
+fetches `output/ios_export/ios_bundle.json` from this laptop over the LAN
+and POSTs HealthKit samples back. Run the server when you want to sync:
+
+```bash
+pipeline/ios_serve.sh
+# or
+python3 -m pipeline.ios_serve --port 8787 --bind 0.0.0.0
+```
+
+First run prints the bearer token (also persisted at `~/.snp_gene_analysis/ios_token`).
+Find the laptop's LAN IP with `ipconfig getifaddr en0` (macOS). On the phone,
+open Prefrontal Cortex → Profile → ⚙ → enter `http://<laptop>:8787` and the
+token, tap "Test connection", Save.
+
+Endpoints (bearer-token auth except `/v1/health`):
+
+| Method | Path | Behavior |
+|---|---|---|
+| `GET`  | `/v1/health`  | Liveness probe; reports bundle mtime. |
+| `GET`  | `/v1/bundle`  | Returns `output/ios_export/ios_bundle.json`. |
+| `POST` | `/v1/samples` | Merges array of sample dicts into `samples_<today>.json`. |
+
+To rotate the token: `python3 -m pipeline.ios_serve --rotate-token`.
+The phone needs its bearer-token field updated to match.
+
+iCloud Drive sync is **not** used — the companion app is signed with a
+personal Apple Developer team that can't enable iCloud entitlements,
+and a LAN transport keeps health data off Apple's infrastructure.
+
+---
+
 ## Customizing the dashboard for a different person
 
 The web dashboard data lives in `output/web/js/data.js`. It's hand-curated — to make it data-driven from someone else's pipeline outputs, you'd write a `pipeline/13_build_report.py` that reads `output/raw_findings/*.tsv` and writes `output/web/js/data.js`. Marked as TODO — for now, copy the structure and adapt the entries.
