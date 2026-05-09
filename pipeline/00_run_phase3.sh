@@ -70,11 +70,16 @@ python3 pipeline/10_imputed_panels.py \
 
 # ── 6. Polygenic Risk Scores ──
 echo ""
-echo "[6/6] Polygenic Risk Scores (10 PGS Catalog scores)"
+echo "[6/7] Polygenic Risk Scores (10 PGS Catalog scores)"
 python3 pipeline/11_prs.py \
     --vcf data/imputed_grch38.vcf.gz \
     --out output/raw_findings/prs_scores.tsv \
     --per-variant-out output/raw_findings/prs_per_variant.tsv 2>&1 | tail -15
+
+# ── 7. Aggregate findings → JSON contract ──
+echo ""
+echo "[7/7] Aggregating findings → JSON contract for downstream consumers"
+python3 -m pipeline.export_findings 2>&1 | tail -3
 
 echo ""
 echo "===================================="
@@ -87,6 +92,7 @@ echo "  output/raw_findings/imputed_panels.tsv                  ← nutrition + 
 echo "  output/raw_findings/imputed_grch38/clinvar_acmg.tsv     ← ACMG SF v3.2 hits"
 echo "  output/raw_findings/imputed_grch38/carrier_status.tsv   ← Carrier panel hits"
 echo "  output/raw_findings/prs_scores.tsv                      ← Polygenic risk scores"
+echo "  output/findings/genomic_findings.json                   ← public artifact for Prefrontal Cortex"
 echo ""
 echo "Build the dashboard:"
 echo "  python3 pipeline/13_build_report.py"
