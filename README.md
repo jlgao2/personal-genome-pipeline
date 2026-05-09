@@ -93,14 +93,13 @@ This:
 7. Runs ~60-SNP nutrition / PGx / lifestyle panels
 8. Computes 10 polygenic risk scores
 
-### 4. View the dashboard
+### 4. The public artifact
 
-```bash
-python3 -m http.server 8732 --directory output/web
-open http://localhost:8732
-```
-
-The dashboard has filter chips (Tier A/B/C), section search, accordion findings with side-panel data, lab-table cross-reference, and a checklist for your next PCP visit.
+Phase 3's last step writes `output/findings/genomic_findings.json` — a
+versioned, schema-stable rollup of every per-source finding. This is the
+file downstream consumers ingest. The longitudinal-health side
+([`prefrontal-cortex`](https://github.com/jlgao2/prefrontal-cortex)) reads
+it via a symlink and feeds it through its DuckDB+Parquet spine.
 
 ---
 
@@ -123,10 +122,9 @@ output/
 │       ├── clinvar_acmg.tsv             ACMG SF v3.2 actionable variants
 │       ├── carrier_status.tsv           Recessive carrier panel
 │       └── clinvar_full.tsv             All P/LP ClinVar matches
-└── web/
-    ├── index.html                       Dashboard (open in browser)
-    ├── howto.html                       This walkthrough as a styled web page
-    └── ...
+└── findings/
+    └── genomic_findings.json            ← public artifact for downstream consumers
+                                           (schema-versioned canonical findings rows)
 ```
 
 ---
@@ -136,7 +134,11 @@ output/
 - **All raw genotype processing is local.** Your 23andMe TSV never leaves your machine after phase 1.
 - **Only Phase 2 (imputation) uploads data**, and only to the NIH-hosted TOPMed Imputation Server (federally-funded, FERPA/HIPAA-aware, encrypted-at-rest, results encrypted with a password emailed only to you). They don't sell or research your individual data without consent.
 - **Phase 3 lookups** (ClinVar, gnomAD via myvariant.info, PGS Catalog) query publicly-available databases by `rsID` — no genotypes leave your machine.
-- **The dashboard is a static site** — no server, no analytics, no telemetry. Open `output/web/index.html` directly in a browser.
+- **No live dashboard ships in this repo.** The genome side outputs static
+  artifacts (markdown reports, TSVs, the canonical JSON). If you also run the
+  sibling [`prefrontal-cortex`](https://github.com/jlgao2/prefrontal-cortex)
+  health-tracking repo, it pulls `genomic_findings.json` via a symlink and
+  surfaces it on its dashboard — but that's a separate process.
 
 If even the TOPMed upload feels too exposed: skip Phase 2. You'll lose the ~50× variant expansion and the polygenic risk scores, but Phase 1 outputs are still useful — run the panel scripts directly on `data/raw_grch37.vcf.gz`.
 
@@ -171,51 +173,16 @@ data/imputed_grch38_r2_0.8.vcf.gz                (~9M variants, R²≥0.8)
         ├──▶ rsID panels       → output/raw_findings/imputed_panels.tsv
         └──▶ PGS Catalog PRS   → output/raw_findings/prs_scores.tsv
                                        │
-                                       ▼ pipeline/13_build_report.py
-                                  output/web/  (interactive dashboard)
+                                       ▼ pipeline/export_findings.py
+                                  output/findings/genomic_findings.json
+                                       │
+                                       │  (consumed by sibling repo)
+                                       ▼
+                                  prefrontal-cortex/data/raw/genome/
+                                  (symlink → dashboard, iOS sync, …)
 ```
 
 ---
-
-## iOS sync (Prefrontal Cortex companion app)
-
-The companion app at [`personal-data-ios`](https://github.com/jlgao2/personal-data-ios)
-fetches `output/ios_export/ios_bundle.json` from this laptop over the LAN
-and POSTs HealthKit samples back. Run the server when you want to sync:
-
-```bash
-pipeline/ios_serve.sh
-# or
-python3 -m pipeline.ios_serve --port 8787 --bind 0.0.0.0
-```
-
-First run prints the bearer token (also persisted at `~/.snp_gene_analysis/ios_token`).
-Find the laptop's LAN IP with `ipconfig getifaddr en0` (macOS). On the phone,
-open Prefrontal Cortex → Profile → ⚙ → enter `http://<laptop>:8787` and the
-token, tap "Test connection", Save.
-
-Endpoints (bearer-token auth except `/v1/health`):
-
-| Method | Path | Behavior |
-|---|---|---|
-| `GET`  | `/v1/health`  | Liveness probe; reports bundle mtime. |
-| `GET`  | `/v1/bundle`  | Returns `output/ios_export/ios_bundle.json`. |
-| `POST` | `/v1/samples` | Merges array of sample dicts into `samples_<today>.json`. |
-
-To rotate the token: `python3 -m pipeline.ios_serve --rotate-token`.
-The phone needs its bearer-token field updated to match.
-
-iCloud Drive sync is **not** used — the companion app is signed with a
-personal Apple Developer team that can't enable iCloud entitlements,
-and a LAN transport keeps health data off Apple's infrastructure.
-
----
-
-## Customizing the dashboard for a different person
-
-The web dashboard data lives in `output/web/js/data.js`. It's hand-curated — to make it data-driven from someone else's pipeline outputs, you'd write a `pipeline/13_build_report.py` that reads `output/raw_findings/*.tsv` and writes `output/web/js/data.js`. Marked as TODO — for now, copy the structure and adapt the entries.
-
-Or just deliver the markdown reports + the per-finding TSVs without the web layer — those are 100% data-driven and update automatically.
 
 ---
 
@@ -247,41 +214,19 @@ For all of these, **30× whole-genome sequencing** ($200–600 from Nebula, Dant
 
 ---
 
-## Bring Your Own Data (BYOD)
+## Sibling repo
 
-Beyond 23andMe, this pipeline also ingests longitudinal health data. Drop any of
-the supported source files into `data/raw/<source>/` and run
-`bash pipeline/refresh.sh` — the dashboard will pick up new charts automatically.
+Longitudinal health tracking — HealthKit, Garmin, MyChart, social, the
+adaptive-programming engine, the dashboard, and the iOS LAN sync — used
+to live in this repo. As of 2026-05-08 they're in
+[`prefrontal-cortex`](https://github.com/jlgao2/prefrontal-cortex), which
+ingests `output/findings/genomic_findings.json` from here via a symlink.
+The split lets the genome pipeline (annual, episodic) and the health
+pipeline (daily, continuous) evolve at their own cadences and reduces
+the surface area where raw genotype data and daily vitals coexist.
 
-### Supported sources
-
-| Source | Where to put it | Status |
-|---|---|---|
-| **23andMe v5 raw** | `data/raw/genome/genome_*.zip` | implemented (Phase 1) |
-| **Apple HealthKit** | `data/raw/healthkit/export.zip` (the ZIP from Health.app → Profile → "Export All Health Data") | implemented (Vitals section) |
-| **Garmin Connect bulk** | `data/raw/garmin/garmin_export.zip` (bulk ZIP from Garmin Connect → Account → Export Your Data) | implemented (Vitals + Workouts) |
-| **MyChart / FHIR** | `data/raw/fhir/*.json` (download FHIR Bundle from MyChart Web → Health → "Download My Record") | implemented (Action Loop) |
-| **iOS app daily upload** | `data/raw/ios/samples_*.json` (auto-uploaded by the [iOS companion app](https://github.com/jlgao2/personal-data-ios)) | implemented (replaces export.zip dance) |
-| **Social aggregates** | `data/raw/social/aggregates.parquet` (produced by the separate `social-media-graph` repo, derived signals only — no raw contacts) | planned |
-| **Clinical labs** | `data/raw/labs/*.csv` (LabCorp/Quest CSV exports) | planned |
-
-### What gets parsed
-
-For Apple HealthKit specifically: the parser pulls these record types into the
-Vitals section: heart rate (resting, walking-avg, HRV), VO₂ max, blood
-pressure, weight, BMI, body fat %, steps, distance, active/basal energy,
-exercise minutes, sleep stages, respiratory rate, SpO₂, blood glucose.
-
-Other Apple HealthKit types (e.g., dietary records) are silently skipped —
-extending coverage = adding rows to
-`pipeline/parsers/healthkit_types.py:HEALTHKIT_TYPE_MAP`.
-
-### Privacy
-
-Real data lives only on your machine — `data/`, `output/`, and the
-auto-generated `output/web/js/data-vitals.js` are gitignored. The public
-`docs/` site keeps the synthetic Eunjung Kim demo. Nothing personal touches
-GitHub unless you explicitly commit it.
+The iOS companion is in [`personal-data-ios`](https://github.com/jlgao2/personal-data-ios)
+— it talks to the prefrontal-cortex server, not this repo directly.
 
 ---
 
