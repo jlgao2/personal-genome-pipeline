@@ -37,8 +37,8 @@ All open-source. Local-first. Only the imputation step uploads data (to NIH-host
 ### 0. Clone & set up environment (one-time, ~5 min)
 
 ```bash
-git clone <this-repo> ~/snp_gene_analysis
-cd ~/snp_gene_analysis
+git clone <this-repo>
+cd personal-genome-pipeline
 bash pipeline/00_setup.sh
 ```
 
