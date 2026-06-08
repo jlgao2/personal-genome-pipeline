@@ -37,3 +37,11 @@ def test_prep_transforms(tmp_path):
     for r in indel:
         assert len(r[3]) <= 4 and r[3][0] == "C"
         assert "," not in r[4]
+
+
+def test_orchestrator_omits_topmed_steps():
+    text = Path("pipeline/00_run_wgs.sh").read_text()
+    assert "TOPMED_PASS" not in text
+    assert "decrypt" not in text.lower()
+    assert "--source wgs" in text
+    assert "output/raw_findings/wgs" in text
