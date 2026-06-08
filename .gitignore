@@ -34,6 +34,9 @@ output/genetic_clinical_correlation.md
 output/README.md
 output/ios_export/
 output/findings/
+output/annotsv/
+# personal PRS percentiles, scores, samplesheet (general docs live in docs/prs/)
+output/pgsc_calc/
 
 # ── Dashboard data (contains personal findings — use data.example.js) ──
 output/web/js/data.js
@@ -42,6 +45,11 @@ output/cross_refs.yaml
 output/training_context.md
 output/health_profile.json
 output/media.yaml
+
+# ── Nextflow work dir + scaffolding (sample-derived genotype intermediates) ──
+work/
+.nextflow/
+.nextflow.log*
 
 # ── Logs may contain sample-specific info ──
 logs/
