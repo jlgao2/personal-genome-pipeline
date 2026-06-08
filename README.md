@@ -212,6 +212,20 @@ data/imputed_grch38_r2_0.8.vcf.gz                (~9M variants, R²≥0.8)
 
 For all of these, **30× whole-genome sequencing** ($200–600 from Nebula, Dante Labs, etc.) is the right next step. The same pipeline runs on WGS-derived VCFs with massively expanded coverage.
 
+### Alternative input: 30× WGS (no imputation)
+
+If you have whole-genome sequencing instead of (or in addition to) the chip,
+skip phases 1–2 entirely and run:
+
+    GVCF=data/wgs/<sample>.snp-indel.genome.vcf.gz bash pipeline/00_run_wgs.sh
+
+This normalizes the gVCF (drop ref-blocks, keep PASS, left-align/split against a
+GRCh38 reference), runs tiered ClinVar/ACMG (an **actionable** ACMG SF tier plus a
+genome-wide **exploratory** tier), the nutrition/PGx panels, PRS, and PharmCAT, then
+writes a schema-v2 `output/findings/genomic_findings.json` tagged `source=wgs`
+(superseding the imputed artifact). See
+`docs/superpowers/specs/2026-06-07-wgs-snv-indel-path-design.md` for the design.
+
 ---
 
 ## Sibling repo
