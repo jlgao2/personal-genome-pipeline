@@ -6,14 +6,17 @@ SV=data/wgs/SQ8TH633.30x.sv.vcf.gz
 CNV=data/wgs/SQ8TH633.30x.cnv.vcf.gz
 RAW=output/raw_findings/wgs
 TMP=data/wgs/sv_cnv; mkdir -p "$TMP" "$RAW" output/annotsv
+# AnnotSV appends "Annotations_Human/..." itself, so point at the PARENT dir.
+ANNOT="${ANNOTSV_ANNOT:-$ROOT/refs/annotsv}"
 
 echo "[1/4] prep SV/CNV"
+tabix -f -p vcf "$SV"; tabix -f -p vcf "$CNV"   # bcftools -r needs an index
 bash pipeline/wgs/prep_sv_cnv.sh "$SV" "$CNV" "$TMP/sv.clean.vcf.gz" "$TMP/cnv.clean.vcf.gz"
 
 echo "[2/4] AnnotSV (GRCh38)"
 for kind in sv cnv; do
   mamba run -n annotsv AnnotSV -SVinputFile "$TMP/$kind.clean.vcf.gz" \
-     -genomeBuild GRCh38 -outputDir output/annotsv -outputFile "$kind.annotated"
+     -annotationsDir "$ANNOT" -genomeBuild GRCh38 -outputDir output/annotsv -outputFile "$kind.annotated"
 done
 
 echo "[3/4] parse → tiered findings (sv first, then append cnv)"
