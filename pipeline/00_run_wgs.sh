@@ -30,12 +30,25 @@ python3 pipeline/06_clinvar_acmg.py --vcf "$PREP" --clinvar refs/clinvar_grch38.
     --exclude "$RAW/clinvar_acmg.tsv" --cap 200
 
 echo "[5/7] PharmCAT"
-bcftools view -R refs/pharmcat/pharmcat_positions.vcf.bgz "$PREP" -Oz -o data/wgs_pharmcat_positions.vcf.gz
+# pharmcat_positions.vcf.bgz is chr-prefixed; our prep VCF is not. Rename prep
+# contigs to chr-prefix so the -R slice (and PharmCAT, which expects chr-named
+# GRCh38) line up. Without this the slice is empty and PharmCAT no-calls everything.
+PHARMCAT_RENAME=$(mktemp)
+for c in {1..22} X Y; do printf '%s\tchr%s\n' "$c" "$c"; done > "$PHARMCAT_RENAME"
+bcftools annotate --rename-chrs "$PHARMCAT_RENAME" "$PREP" -Oz -o data/wgs_prep_chr.vcf.gz
+bcftools index -t data/wgs_prep_chr.vcf.gz
+rm -f "$PHARMCAT_RENAME"
+bcftools view -R refs/pharmcat/pharmcat_positions.vcf.bgz data/wgs_prep_chr.vcf.gz \
+    -Oz -o data/wgs_pharmcat_positions.vcf.gz
 bcftools index -t data/wgs_pharmcat_positions.vcf.gz
+NSLICE=$(bcftools index -n data/wgs_pharmcat_positions.vcf.gz)
+echo "  PharmCAT positions slice: $NSLICE records"
+[[ "$NSLICE" -gt 0 ]] || { echo "ERROR: PharmCAT positions slice is empty — chr-naming mismatch?" >&2; exit 1; }
 mkdir -p output/pharmcat
 PATH="/opt/homebrew/opt/openjdk/bin:$PATH" java -jar refs/pharmcat/pharmcat.jar \
     -vcf data/wgs_pharmcat_positions.vcf.gz -reporterHtml -reporterJson -reporterCallsOnlyTsv \
     -o output/pharmcat 2>&1 | tail -8
+rm -f data/wgs_prep_chr.vcf.gz data/wgs_prep_chr.vcf.gz.tbi
 
 echo "[6/7] Panels + PRS"
 python3 pipeline/10_imputed_panels.py --vcf "$PREP" --out "$RAW/imputed_panels.tsv" 2>&1 | tail -5
