@@ -226,6 +226,19 @@ writes a schema-v2 `output/findings/genomic_findings.json` tagged `source=wgs`
 (superseding the imputed artifact). See
 `docs/superpowers/specs/2026-06-07-wgs-snv-indel-path-design.md` for the design.
 
+#### SV/CNV (structural variants)
+
+To annotate Manta SVs and Canvas CNVs with AnnotSV and fold them into
+`genomic_findings.json`, run the isolated SV/CNV orchestrator:
+
+    bash pipeline/00_run_wgs_sv.sh
+
+Prerequisites: the `annotsv` conda env (AnnotSV 3.x) and the GRCh38 annotation
+databases (`INSTALL_annotations.sh` inside the env). The script preps the VCFs,
+runs AnnotSV on each caller's output, filters to ACMG class ≥ 3, tiers
+classes 4–5 as `actionable` and class 3 as `exploratory`, then merges the
+results into `output/findings/genomic_findings.json` tagged `source=wgs`.
+
 ---
 
 ## Sibling repo
