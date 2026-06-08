@@ -1,0 +1,9 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="">
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="">
+##INFO=<ID=END,Number=1,Type=Integer,Description="">
+##ALT=<ID=CN0,Description="">
+##contig=<ID=1>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SQ8TH633
+1	818759	Canvas:REF:1	N	.	18	PASS	END=1366066	GT	./.
+1	5000000	Canvas:GAIN:1	N	<CN0>	30	PASS	SVTYPE=CNV;END=5100000	GT	./.

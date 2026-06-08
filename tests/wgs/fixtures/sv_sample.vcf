@@ -1,0 +1,10 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="">
+##FILTER=<ID=FAIL,Description="">
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="">
+##INFO=<ID=END,Number=1,Type=Integer,Description="">
+##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="">
+##contig=<ID=1>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SQ8TH633
+1	1157306	MantaDEL:1	C	<DEL>	50	PASS	SVTYPE=DEL;END=1157381;SVLEN=-75	GT	0/1
+1	2000000	MantaDUP:1	C	<DUP>	40	FAIL	SVTYPE=DUP;END=2010000;SVLEN=10000	GT	0/1
