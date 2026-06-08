@@ -187,11 +187,12 @@ TSVs — the regenerated artifact is WGS-only. Imputed TSVs remain in their own
   false-negative P/LP indel findings. Therefore prep runs
   `bcftools norm -f <GRCh38 FASTA> -m-` (single invocation: split + left-align + trim).
 - **The FASTA must use the gVCF's contig naming** (`1..22,X,Y,MT`, no `chr` prefix).
-  A GRCh38 FASTA exists in-repo at `refs/pharmcat/reference.fna.bgz` but is `chr`-prefixed.
-  The plan will resolve this by **reheadering that FASTA to a no-prefix copy**
-  (`refs/grch38_noprefix.fa[.gz]` + `.fai`) — a one-time prep step, no new multi-GB
-  download — and the prep script uses that. (Fallback if reheadering proves unviable:
-  fetch a no-prefix GRCh38 primary-assembly FASTA.)
+  The in-repo `refs/pharmcat/reference.fna.bgz` is unusable for this: it is `chr`-prefixed
+  **and truncated on disk** (490 MB, BGZF-invalid past chr9 — a broken download; PharmCAT
+  itself doesn't need it, it uses `pharmcat_positions.vcf.bgz` + the JAR). So prep uses a
+  one-time download of **Ensembl's GRCh38 primary-assembly FASTA**, which is natively
+  no-`chr`-prefix → `refs/grch38_noprefix.fa` + `.fai` (~900 MB download, ~3 GB on disk).
+  This is a new download (the earlier "no new downloads" claim was wrong).
 - **Other dependencies — already present:** ClinVar GRCh38 (`refs/clinvar_grch38.vcf.gz`),
   PharmCAT jar + positions (`refs/pharmcat/`), PGS scoring files (fetched by `11`). The
   gVCF already carries rsIDs, so **no dbSNP download**.

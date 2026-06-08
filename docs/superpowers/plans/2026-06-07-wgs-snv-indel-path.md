@@ -35,7 +35,7 @@
 
 ## Task 1: No-prefix GRCh38 FASTA for normalization
 
-The gVCF uses contigs `1..22,X,Y` (no `chr`); the in-repo FASTA (`refs/pharmcat/reference.fna.bgz`) is `chr`-prefixed. `bcftools norm -f` requires matching names. Build a reheadered copy once. (MT/decoy contigs are excluded from the prep — see Task 4 — so we only need 1–22,X,Y.)
+The gVCF uses contigs `1..22,X,Y,MT` (no `chr`); `bcftools norm -f` requires a FASTA with matching names. The in-repo `refs/pharmcat/reference.fna.bgz` is unusable (chr-prefixed AND truncated on disk). Fetch Ensembl's GRCh38 primary assembly, which is natively no-`chr`-prefix.
 
 **Files:**
 - Create: `pipeline/wgs/make_noprefix_fasta.sh`
@@ -45,38 +45,35 @@ The gVCF uses contigs `1..22,X,Y` (no `chr`); the in-repo FASTA (`refs/pharmcat/
 
 ```bash
 #!/usr/bin/env bash
-# One-time: derive a no-"chr"-prefix GRCh38 FASTA (contigs 1..22,X,Y) from the
-# chr-prefixed PharmCAT reference, for use with `bcftools norm -f`.
+# One-time: fetch a no-"chr"-prefix GRCh38 FASTA (contigs 1..22,X,Y,MT,scaffolds)
+# for `bcftools norm -f`. Ensembl's primary assembly is natively no-prefix, which
+# matches the WGS gVCF's contig naming (1..22,X,Y,MT).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SRC="$ROOT/refs/pharmcat/reference.fna.bgz"
 OUT="$ROOT/refs/grch38_noprefix.fa"
+URL="https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"
 
-if [[ ! -f "$SRC" ]]; then
-  echo "ERROR: $SRC not found (PharmCAT reference). Run pipeline/00_setup.sh first." >&2
-  exit 1
-fi
 if [[ -f "$OUT" && -f "$OUT.fai" ]]; then
   echo "Already built: $OUT"; exit 0
 fi
 
-# Keep only chr1..chr22,chrX,chrY; strip the 'chr' prefix in the FASTA headers.
-WANT=$(printf "chr%s," {1..22} X Y | sed 's/,$//')
-samtools faidx "$SRC" ${WANT//,/ } \
-  | sed -E 's/^>chr([0-9XY]+).*/>\1/' > "$OUT"
+echo "Downloading GRCh38 primary assembly (~900 MB) from Ensembl ..."
+curl -fL --retry 3 --retry-delay 5 -o "$OUT.gz" "$URL"
+echo "Decompressing (~3 GB) ..."
+gunzip -f "$OUT.gz"
 samtools faidx "$OUT"
 echo "Wrote $OUT and $OUT.fai"
-echo "Contigs: $(cut -f1 "$OUT.fai" | tr '\n' ' ')"
+echo "Primary contigs: $(cut -f1 "$OUT.fai" | grep -E '^([0-9]+|X|Y|MT)$' | tr '\n' ' ')"
 ```
 
-- [ ] **Step 2: Make executable and run it**
+- [ ] **Step 2: Make executable and run it** (~900 MB download — slow)
 
 Run:
 ```bash
 chmod +x pipeline/wgs/make_noprefix_fasta.sh
 bash pipeline/wgs/make_noprefix_fasta.sh
 ```
-Expected: `Contigs: 1 2 3 ... 22 X Y`
+Expected: `Primary contigs: 1 2 3 ... 22 X Y MT`
 
 - [ ] **Step 3: Verify it normalizes a sample record**
 
