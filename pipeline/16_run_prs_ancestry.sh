@@ -13,8 +13,9 @@
 #
 # macOS Apple-Silicon notes baked in below:
 #   - CONDA_SUBDIR=osx-64 (bioconda plink2 etc. have no osx-arm64 build → Rosetta).
-#   - a zcat→`gzip -dc` shim on PATH (macOS zcat can't read .gz; pgsc_calc's ancestry
-#     step uses zcat).
+#   - a zcat→`gzip -dc` shim, injected at the FRONT of PATH via the laptop.config
+#     beforeScript (macOS zcat can't read .gz; MATCH_COMBINE/ancestry steps use zcat and
+#     fail silently otherwise — see the beforeScript comment below).
 #   - --min_overlap 0.0: WGS vs GRCh37-lifted scorefiles match at 33–70%, below the strict
 #     0.75 default; the ancestry adjustment scores sample+reference over the SAME variants
 #     so the percentile stays a fair rank.
@@ -45,7 +46,15 @@ printf 'sampleset,path_prefix,chrom,format,vcf_genotype_field\n%s,%s/%s,,vcf,GT\
 NCPU=$(sysctl -n hw.ncpu 2>/dev/null || nproc)
 cat > "$OUTDIR/laptop.config" <<EOF
 executor { name='local'; cpus=${NCPU}; queueSize=${NCPU} }
-process { resourceLimits = [ cpus: ${NCPU}, memory: '40.GB', time: '720.h' ] }
+process {
+  resourceLimits = [ cpus: ${NCPU}, memory: '40.GB', time: '720.h' ]
+  // macOS: force the zcat->gzip shim to win even after '-profile conda' prepends the
+  // env bin to PATH. MATCH_COMBINE builds filter_ids via 'zcat <(...)' in a process
+  // substitution; macOS /usr/bin/zcat fails silently there (wants a .Z suffix) -> empty
+  // filter -> every score "matches" 0 variants -> ValueError. beforeScript runs AFTER
+  // conda activation, so prepending the shim dir here guarantees it resolves first.
+  beforeScript   = 'export PATH="$ROOT/$OUTDIR/shims:\$PATH"'
+}
 params  { max_cpus=${NCPU}; max_memory='40.GB' }
 EOF
 printf '#!/usr/bin/env bash\nexec gzip -dc "$@"\n' > "$OUTDIR/shims/zcat"; chmod +x "$OUTDIR/shims/zcat"
