@@ -61,3 +61,21 @@ def test_write_findings_creates_parent_dir(tmp_path):
     deep = tmp_path / "a" / "b" / "c" / "out.json"
     write_findings(DEMO, deep)
     assert deep.exists()
+
+
+def test_schema_v2_and_source_stamp(tmp_path):
+    from pipeline.export_findings import SCHEMA_VERSION, build_payload
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    (raw / "clinvar_acmg.tsv").write_text(
+        "chrom\tpos\tref\talt\trsid\tgene\tclnsig_class\tclnsig\tclndn\tclnrevstat\tstars\tuser_gt\tuser_zygosity\n"
+        "13\t32339000\tA\tT\trs80357000\tBRCA2\tPathogenic\tPathogenic\tcancer\tcriteria_provided,_multiple_submitters,_no_conflicts\t2\t0/1\theterozygous\n"
+    )
+    assert SCHEMA_VERSION == 2
+    payload = build_payload(raw, source="wgs")
+    assert payload["schema_version"] == 2
+    assert len(payload["rows"]) == 1
+    row = payload["rows"][0]
+    assert row["source"] == "wgs"
+    assert row["scan_tier"] == "actionable"
+    assert row["tier"] == "A"  # 2 stars → unchanged A/B/C semantics

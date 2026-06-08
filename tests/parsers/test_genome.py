@@ -27,8 +27,16 @@ def test_parse_pgx_tsv_yields_canonical_rows():
 
 def test_findings_columns_complete():
     expected = {"id", "source_tsv", "gene", "rsid", "chrom", "pos",
-                "ref", "alt", "genotype", "tier", "summary", "meta"}
+                "ref", "alt", "genotype", "tier", "summary", "meta",
+                "source", "scan_tier"}
     assert set(FINDINGS_COLUMNS) == expected
+
+
+def test_row_defaults_scan_tier_actionable():
+    from pipeline.parsers.genome import _row
+    r = _row("clinvar_acmg", gene="BRCA1")
+    assert r["scan_tier"] == "actionable"
+    assert r["source"] is None  # stamped later by collect_rows / parse_to_parquet
 
 
 def test_parse_clinvar_tsv_yields_canonical_rows():

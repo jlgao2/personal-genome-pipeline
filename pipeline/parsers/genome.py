@@ -29,6 +29,8 @@ FINDINGS_COLUMNS = [
     "tier",
     "summary",
     "meta",
+    "source",
+    "scan_tier",
 ]
 
 
@@ -36,6 +38,7 @@ def _row(source_tsv: str, **fields) -> dict:
     """Return a canonical findings row, padding missing columns with None."""
     base = {col: None for col in FINDINGS_COLUMNS}
     base.update(fields)
+    base["scan_tier"] = fields.get("scan_tier", "actionable")
     base["source_tsv"] = source_tsv
     rsid = fields.get("rsid") or fields.get("pos") or ""
     base["id"] = f"{source_tsv}:{rsid}"
@@ -185,7 +188,7 @@ TSV_PARSERS = [
 ]
 
 
-def parse_to_parquet(raw_dir: Path, outdir: Path) -> int:
+def parse_to_parquet(raw_dir: Path, outdir: Path, source: str = "imputed") -> int:
     """Parse every supported TSV under raw_dir, write one Parquet partition.
 
     Idempotent: existing findings-*.parquet files are deleted before writing.
@@ -200,7 +203,9 @@ def parse_to_parquet(raw_dir: Path, outdir: Path) -> int:
         path = raw_dir / filename
         if not path.exists():
             continue
-        rows.extend(parser_fn(path))
+        for row in parser_fn(path):
+            row["source"] = source
+            rows.append(row)
 
     if not rows:
         return 0
@@ -219,6 +224,8 @@ def parse_to_parquet(raw_dir: Path, outdir: Path) -> int:
         ("tier",       pa.string()),
         ("summary",    pa.string()),
         ("meta",       pa.string()),
+        ("source",     pa.string()),
+        ("scan_tier",  pa.string()),
     ])
     table = pa.Table.from_pylist(rows, schema=schema)
     pq.write_table(table, outdir / f"findings-{partition}.parquet")
@@ -230,8 +237,9 @@ def _cli() -> None:
     ap = argparse.ArgumentParser(description="Convert genome TSVs to findings.parquet.")
     ap.add_argument("--raw",    type=Path, default=Path("output/raw_findings"))
     ap.add_argument("--outdir", type=Path, default=Path("data/parquet/findings"))
+    ap.add_argument("--source", default="imputed")
     args = ap.parse_args()
-    n = parse_to_parquet(args.raw, args.outdir)
+    n = parse_to_parquet(args.raw, args.outdir, source=args.source)
     print(f"Wrote {n:,} findings to {args.outdir}/findings-*.parquet")
 
 

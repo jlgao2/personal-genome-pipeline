@@ -23,7 +23,7 @@ from pathlib import Path
 
 from pipeline.parsers.genome import FINDINGS_COLUMNS, TSV_PARSERS
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def _git_short_sha() -> str:
@@ -37,7 +37,7 @@ def _git_short_sha() -> str:
         return "unknown"
 
 
-def collect_rows(raw_dir: Path) -> list[dict]:
+def collect_rows(raw_dir: Path, source: str = "imputed") -> list[dict]:
     """Walk the registered TSV parsers and return a flat list of rows.
 
     Skips TSVs that don't exist on disk (this is the genome pipeline's
@@ -48,21 +48,23 @@ def collect_rows(raw_dir: Path) -> list[dict]:
         path = raw_dir / filename
         if not path.exists():
             continue
-        rows.extend(parser_fn(path))
+        for row in parser_fn(path):
+            row["source"] = source
+            rows.append(row)
     return rows
 
 
-def build_payload(raw_dir: Path) -> dict:
+def build_payload(raw_dir: Path, source: str = "imputed") -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
         "exported_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
         "source_pipeline_commit": _git_short_sha(),
-        "rows": collect_rows(raw_dir),
+        "rows": collect_rows(raw_dir, source=source),
     }
 
 
-def write_findings(raw_dir: Path, out_path: Path) -> int:
-    payload = build_payload(raw_dir)
+def write_findings(raw_dir: Path, out_path: Path, source: str = "imputed") -> int:
+    payload = build_payload(raw_dir, source=source)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(payload, indent=2))
     return len(payload["rows"])
@@ -75,9 +77,10 @@ def main() -> int:
     parser.add_argument("--out", type=Path,
                         default=Path("output/findings/genomic_findings.json"),
                         help="Output JSON path.")
+    parser.add_argument("--source", default="imputed")
     args = parser.parse_args()
 
-    n = write_findings(args.raw, args.out)
+    n = write_findings(args.raw, args.out, source=args.source)
     print(f"[export_findings] wrote {n} rows to {args.out}")
     return 0
 
