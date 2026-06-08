@@ -176,6 +176,30 @@ def parse_prs_scores_tsv(tsv_path: Path) -> Iterator[dict]:
             yield base
 
 
+def parse_sv_cnv_tsv(tsv_path: Path) -> Iterator[dict]:
+    """Yield canonical rows from sv_cnv_findings.tsv (AnnotSV-derived)."""
+    with tsv_path.open() as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            cls = _maybe_int(row.get("acmg_class"))
+            tier = "A" if cls == 5 else ("B" if cls == 4 else "C")
+            yield _row(
+                source_tsv="sv_cnv",
+                scan_tier=row.get("scan_tier") or "actionable",
+                gene=row.get("gene"),
+                chrom=row.get("chrom"),
+                pos=_maybe_int(row.get("start")),
+                ref="N",
+                alt=f"<{row.get('svtype')}>",
+                tier=tier,
+                summary=row.get("summary"),
+                meta={
+                    "end": _maybe_int(row.get("end")), "svlen": row.get("svlen"),
+                    "svtype": row.get("svtype"), "acmg_class": cls, "caller": row.get("caller"),
+                },
+            )
+
+
 # Map raw-findings filename → parser function. Missing files are skipped.
 TSV_PARSERS = [
     ("pgx_quick.tsv",        lambda p: parse_pgx_tsv(p)),
@@ -187,6 +211,7 @@ TSV_PARSERS = [
     ("extra_traits.tsv",     lambda p: parse_curated_traits_tsv(p, "extra_traits")),
     ("imputed_panels.tsv",   lambda p: parse_curated_traits_tsv(p, "imputed_panels")),
     ("prs_scores.tsv",       lambda p: parse_prs_scores_tsv(p)),
+    ("sv_cnv_findings.tsv",  lambda p: parse_sv_cnv_tsv(p)),
 ]
 
 

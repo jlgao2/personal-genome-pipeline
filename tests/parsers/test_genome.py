@@ -82,3 +82,17 @@ def test_clinvar_exploratory_registered_and_tagged(tmp_path):
     rows = list(parse_clinvar_tsv(f, source_tsv="clinvar_exploratory"))
     assert rows[0]["scan_tier"] == "exploratory"
     assert rows[0]["tier"] == "B"  # 1 star → B, unchanged
+
+
+def test_parse_sv_cnv_tsv(tmp_path):
+    from pipeline.parsers.genome import TSV_PARSERS, parse_sv_cnv_tsv
+    assert "sv_cnv_findings.tsv" in [n for n, _ in TSV_PARSERS]
+    f = tmp_path / "sv_cnv_findings.tsv"
+    f.write_text(
+        "chrom\tstart\tend\tsvtype\tsvlen\tgene\tacmg_class\tscan_tier\tcaller\tsummary\n"
+        "1\t1157306\t1157381\tDEL\t-75\tBRCA1\t5\tactionable\tmanta\tDEL overlapping BRCA1 — AnnotSV class 5 (pathogenic)\n"
+    )
+    rows = list(parse_sv_cnv_tsv(f))
+    r = rows[0]
+    assert r["source_tsv"] == "sv_cnv" and r["gene"] == "BRCA1"
+    assert r["alt"] == "<DEL>" and r["tier"] == "A" and r["scan_tier"] == "actionable"
