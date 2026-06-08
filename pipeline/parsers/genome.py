@@ -100,6 +100,7 @@ def parse_clinvar_tsv(tsv_path: Path, source_tsv: str = "clinvar_acmg") -> Itera
             )
             yield _row(
                 source_tsv=source_tsv,
+                scan_tier="exploratory" if source_tsv == "clinvar_exploratory" else "actionable",
                 gene=row.get("gene"),
                 rsid=row.get("rsid"),
                 chrom=row.get("chrom"),
@@ -181,6 +182,7 @@ TSV_PARSERS = [
     ("clinvar_acmg.tsv",     lambda p: parse_clinvar_tsv(p, "clinvar_acmg")),
     ("clinvar_full.tsv",     lambda p: parse_clinvar_tsv(p, "clinvar_full")),
     ("carrier_status.tsv",   lambda p: parse_clinvar_tsv(p, "carrier_status")),
+    ("clinvar_exploratory.tsv", lambda p: parse_clinvar_tsv(p, "clinvar_exploratory")),
     ("nutrition_traits.tsv", lambda p: parse_curated_traits_tsv(p, "nutrition_traits")),
     ("extra_traits.tsv",     lambda p: parse_curated_traits_tsv(p, "extra_traits")),
     ("imputed_panels.tsv",   lambda p: parse_curated_traits_tsv(p, "imputed_panels")),

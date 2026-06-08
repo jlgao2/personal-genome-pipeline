@@ -68,3 +68,17 @@ def test_parse_prs_scores_handles_na_values():
     rows = list(parse_prs_scores_tsv(real))
     assert len(rows) >= 5
     assert all(r["id"].startswith("prs:") for r in rows)
+
+
+def test_clinvar_exploratory_registered_and_tagged(tmp_path):
+    from pipeline.parsers.genome import TSV_PARSERS, parse_clinvar_tsv
+    names = [n for n, _ in TSV_PARSERS]
+    assert "clinvar_exploratory.tsv" in names
+    f = tmp_path / "clinvar_exploratory.tsv"
+    f.write_text(
+        "chrom\tpos\tref\talt\trsid\tgene\tclnsig_class\tclnsig\tclndn\tclnrevstat\tstars\tuser_gt\tuser_zygosity\n"
+        "7\t100\tA\tG\trs1\tXYZ\tPathogenic\tPathogenic\tcond\tcriteria_provided,_single_submitter\t1\t0/1\theterozygous\n"
+    )
+    rows = list(parse_clinvar_tsv(f, source_tsv="clinvar_exploratory"))
+    assert rows[0]["scan_tier"] == "exploratory"
+    assert rows[0]["tier"] == "B"  # 1 star → B, unchanged
