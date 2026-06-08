@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="">
+##FILTER=<ID=FAIL,Description="">
+##contig=<ID=1>
+##INFO=<ID=END,Number=1,Type=Integer,Description="">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SQ8TH633
+1	10001	.	T	.	.	PASS	END=10100	GT	0/0
+1	20000	.	T	<NON_REF>	.	PASS	.	GT	0/0
+1	30000	rs_mixed	T	C,<NON_REF>	50	PASS	.	GT	1/0
+1	40000	rs_fail	T	G	5	FAIL	.	GT	1/1
+1	50000	.	T	A	50	PASS	.	GT	0/1
+1	82133	rs_indel	CAAA	CA,C	50	PASS	.	GT	1/2
