@@ -1,0 +1,9 @@
+##fileformat=VCFv4.2
+##INFO=<ID=CLNSIG,Number=.,Type=String,Description="">
+##INFO=<ID=CLNDN,Number=.,Type=String,Description="">
+##INFO=<ID=CLNREVSTAT,Number=.,Type=String,Description="">
+##INFO=<ID=GENEINFO,Number=1,Type=String,Description="">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+13	100	rs_brca2	A	T	.	.	CLNSIG=Pathogenic;CLNDN=Cancer;CLNREVSTAT=criteria_provided,_multiple_submitters,_no_conflicts;GENEINFO=BRCA2:675
+7	200	rs_explore	G	C	.	.	CLNSIG=Likely_pathogenic;CLNDN=SomethingElse;CLNREVSTAT=criteria_provided,_single_submitter;GENEINFO=XYZ:111
+1	300	rs_carrier	C	G	.	.	CLNSIG=Pathogenic;CLNDN=Recessive;CLNREVSTAT=criteria_provided,_multiple_submitters,_no_conflicts;GENEINFO=CFTR:1080

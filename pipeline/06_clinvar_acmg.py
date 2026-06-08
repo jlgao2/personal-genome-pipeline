@@ -137,6 +137,12 @@ def main():
     ap.add_argument("--build", choices=["GRCh37", "GRCh38"], required=True)
     ap.add_argument("--outdir", default="output/raw_findings")
     ap.add_argument("--min-stars", type=int, default=2)
+    ap.add_argument("--mode", choices=["legacy", "actionable", "exploratory"],
+                    default="legacy")
+    ap.add_argument("--exclude", default=None,
+                    help="exploratory mode: TSV whose chrom:pos:ref:alt rows to skip")
+    ap.add_argument("--cap", type=int, default=200,
+                    help="exploratory mode: max rows after sorting by (stars, sig)")
     args = ap.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
@@ -148,19 +154,22 @@ def main():
     full_path = os.path.join(args.outdir, "clinvar_full.tsv")
     acmg_path = os.path.join(args.outdir, "clinvar_acmg.tsv")
     carrier_path = os.path.join(args.outdir, "carrier_status.tsv")
+    explore_path = os.path.join(args.outdir, "clinvar_exploratory.tsv")
 
     header = "chrom\tpos\tref\talt\trsid\tgene\tclnsig_class\tclnsig\tclndn\tclnrevstat\tstars\tuser_gt\tuser_zygosity\n"
-    with open(full_path, "w") as f_full, open(acmg_path, "w") as f_acmg, open(carrier_path, "w") as f_carrier:
-        f_full.write(header)
-        f_acmg.write(header)
-        f_carrier.write(header)
 
-        n_clinvar = 0
-        n_match = 0
-        n_path = 0
-        n_acmg = 0
-        n_carrier = 0
+    exclude_keys = set()
+    if args.exclude and os.path.exists(args.exclude):
+        with open(args.exclude) as ex:
+            next(ex, None)  # header
+            for ln in ex:
+                c = ln.rstrip("\n").split("\t")
+                if len(c) >= 4:
+                    exclude_keys.add((c[0], c[1], c[2], c[3]))
 
+    def iter_matches():
+        """Yield (gene, stars, cls, row_str, key) for every P/LP, >=min-stars,
+        non-ref/ref match — the shared engine for all modes."""
         open_fn = gzip.open if args.clinvar.endswith(".gz") else open
         with open_fn(args.clinvar, "rt") as cv:
             for line in cv:
@@ -172,72 +181,62 @@ def main():
                 chrom, pos, rsid, ref, alt = cols[0], cols[1], cols[2], cols[3], cols[4]
                 chrom = chrom.replace("chr", "")
                 info = parse_clinvar_info(cols[7])
-                n_clinvar += 1
-
                 key = (chrom, int(pos))
                 if key not in user_vars:
                     continue
-
-                # Match REF/ALT against user variant
                 for u_ref, u_alt, u_gt in user_vars[key]:
-                    if u_ref != ref:
+                    if u_ref != ref or u_alt != alt:
                         continue
-                    if u_alt != alt:
-                        continue
-                    n_match += 1
-
                     cls = is_pathogenic(info["CLNSIG"])
                     if not cls:
                         continue
-                    n_path += 1
-
                     stars = review_status_stars(info["CLNREVSTAT"])
                     if stars < args.min_stars:
                         continue
-
-                    # Determine zygosity
                     zyg = "unknown"
                     if u_gt:
                         a = u_gt.replace("|", "/").split("/")
                         if len(a) == 2:
-                            if a[0] == a[1]:
-                                if a[0] == "0":
-                                    zyg = "ref/ref"
-                                else:
-                                    zyg = "homozygous_alt"
-                            else:
-                                zyg = "heterozygous"
-
-                    # Skip ref/ref calls — these are not findings
+                            zyg = ("ref/ref" if a[0] == a[1] == "0"
+                                   else "homozygous_alt" if a[0] == a[1]
+                                   else "heterozygous")
                     if zyg == "ref/ref":
                         continue
-
-                    row = (
-                        f"{chrom}\t{pos}\t{ref}\t{alt}\t{rsid}\t"
-                        f"{info['GENEINFO']}\t{cls}\t{info['CLNSIG']}\t"
-                        f"{info['CLNDN']}\t{info['CLNREVSTAT']}\t{stars}\t"
-                        f"{u_gt}\t{zyg}\n"
+                    row_str = (
+                        f"{chrom}\t{pos}\t{ref}\t{alt}\t{rsid}\t{info['GENEINFO']}\t"
+                        f"{cls}\t{info['CLNSIG']}\t{info['CLNDN']}\t{info['CLNREVSTAT']}\t"
+                        f"{stars}\t{u_gt}\t{zyg}\n"
                     )
-                    f_full.write(row)
+                    yield info["GENEINFO"], stars, cls, row_str, (chrom, pos, ref, alt)
 
-                    if info["GENEINFO"] in ACMG_SF_V32:
-                        f_acmg.write(row)
-                        n_acmg += 1
-                    if info["GENEINFO"] in ACMG_CARRIER_PANEL:
-                        f_carrier.write(row)
-                        n_carrier += 1
+    if args.mode == "exploratory":
+        sig_rank = {"Pathogenic": 0, "Pathogenic/Likely_pathogenic": 1, "Likely_pathogenic": 2}
+        matches = [m for m in iter_matches() if m[4] not in exclude_keys]
+        matches.sort(key=lambda m: (-m[1], sig_rank.get(m[2], 9)))
+        with open(explore_path, "w") as f_ex:
+            f_ex.write(header)
+            for gene, stars, cls, row_str, key in matches[: args.cap]:
+                f_ex.write(row_str)
+        sys.stderr.write(f"exploratory: {len(matches)} matched, wrote {min(len(matches), args.cap)} → {explore_path}\n")
+        return
 
-                if n_clinvar % 500000 == 0:
-                    sys.stderr.write(f"  ClinVar lines processed: {n_clinvar:,}\n")
-
-    sys.stderr.write(
-        f"\nClinVar lines: {n_clinvar:,}\n"
-        f"Position+REF+ALT matches in your VCF: {n_match:,}\n"
-        f"P/LP matches: {n_path:,}\n"
-        f"  ACMG SF v3.2 hits: {n_acmg}\n"
-        f"  Carrier-panel hits: {n_carrier}\n\n"
-        f"Wrote: {full_path}\n       {acmg_path}\n       {carrier_path}\n"
-    )
+    write_full = args.mode == "legacy"
+    files = {"acmg": open(acmg_path, "w"), "carrier": open(carrier_path, "w")}
+    if write_full:
+        files["full"] = open(full_path, "w")
+    for fh in files.values():
+        fh.write(header)
+    n_acmg = n_carrier = 0
+    for gene, stars, cls, row_str, key in iter_matches():
+        if write_full:
+            files["full"].write(row_str)
+        if gene in ACMG_SF_V32:
+            files["acmg"].write(row_str); n_acmg += 1
+        if gene in ACMG_CARRIER_PANEL:
+            files["carrier"].write(row_str); n_carrier += 1
+    for fh in files.values():
+        fh.close()
+    sys.stderr.write(f"mode={args.mode}: ACMG {n_acmg}, carrier {n_carrier}\n")
 
 
 if __name__ == "__main__":
