@@ -13,6 +13,7 @@ Inputs:
   --build     "GRCh37" or "GRCh38"
 """
 import argparse
+import contextlib
 import gzip
 import sys
 import os
@@ -221,21 +222,24 @@ def main():
         return
 
     write_full = args.mode == "legacy"
-    files = {"acmg": open(acmg_path, "w"), "carrier": open(carrier_path, "w")}
-    if write_full:
-        files["full"] = open(full_path, "w")
-    for fh in files.values():
-        fh.write(header)
-    n_acmg = n_carrier = 0
-    for gene, stars, cls, row_str, key in iter_matches():
-        if write_full:
-            files["full"].write(row_str)
-        if gene in ACMG_SF_V32:
-            files["acmg"].write(row_str); n_acmg += 1
-        if gene in ACMG_CARRIER_PANEL:
-            files["carrier"].write(row_str); n_carrier += 1
-    for fh in files.values():
-        fh.close()
+    with contextlib.ExitStack() as stack:
+        f_acmg = stack.enter_context(open(acmg_path, "w"))
+        f_carrier = stack.enter_context(open(carrier_path, "w"))
+        f_full = stack.enter_context(open(full_path, "w")) if write_full else None
+        f_acmg.write(header)
+        f_carrier.write(header)
+        if f_full:
+            f_full.write(header)
+        n_acmg = n_carrier = 0
+        for gene, stars, cls, row_str, key in iter_matches():
+            if f_full:
+                f_full.write(row_str)
+            if gene in ACMG_SF_V32:
+                f_acmg.write(row_str)
+                n_acmg += 1
+            if gene in ACMG_CARRIER_PANEL:
+                f_carrier.write(row_str)
+                n_carrier += 1
     sys.stderr.write(f"mode={args.mode}: ACMG {n_acmg}, carrier {n_carrier}\n")
 
 
