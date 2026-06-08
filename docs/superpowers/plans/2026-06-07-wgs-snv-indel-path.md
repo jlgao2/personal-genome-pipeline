@@ -646,7 +646,10 @@ FASTA="$ROOT/refs/grch38_noprefix.fa"
 
 REGIONS=$(printf '%s,' {1..22} X Y | sed 's/,$//')
 
-bcftools view -r "$REGIONS" -f PASS -e 'ALT="." || ALT="<NON_REF>"' "$IN" -Ou \
+# NOTE: use `-v snps,indels` (not `-e 'ALT="<NON_REF>"'`) to drop ref-blocks —
+# the -e form drops mixed `T,<NON_REF>` records because bcftools matches if ANY
+# ALT allele is <NON_REF>. -v keeps records with a real variant allele.
+bcftools view -r "$REGIONS" -f PASS -v snps,indels "$IN" -Ou \
   | bcftools norm -f "$FASTA" -m- -Ou \
   | bcftools view -e 'ALT="<NON_REF>" || ALT="."' -Oz -o "$OUT"
 tabix -p vcf "$OUT"
