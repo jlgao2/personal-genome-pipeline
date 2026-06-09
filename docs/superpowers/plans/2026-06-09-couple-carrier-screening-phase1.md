@@ -704,12 +704,12 @@ from pipeline.carrier.schema import CarrierCall, CoupleRisk, CoupleReport
 
 
 def _tier(severe, stars_a, stars_b):
-    m = min(stars_a, stars_b)
+    m = min(stars_a, stars_b)        # evidence quality gates the tier
     if severe and m >= 2:
         return "serious"
-    if m >= 2 or (severe and m >= 1):
+    if m >= 2:
         return "moderate"
-    return "low"
+    return "low"                     # weak evidence (<2 stars) -> low regardless of severity
 
 
 def _by_gene(calls):
