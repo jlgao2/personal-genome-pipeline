@@ -28,7 +28,8 @@ def _recessive_mode(inh):
     return "XL" if "XL" in inh else "AR"
 
 
-def call_carriers(vcf, clinvar, inheritance_tsv, min_stars=2):
+# default min_stars=1: broad carrier screen; the significance tiers down-rank <2-star findings to "low"
+def call_carriers(vcf, clinvar, inheritance_tsv, min_stars=1):
     """Return list[CarrierCall]: heterozygous P/LP variants whose gene is recessive."""
     inheritance = load_inheritance(inheritance_tsv)
     user_vars = parse_vcf_positions(vcf)
@@ -60,7 +61,7 @@ def main():
     ap.add_argument("--inheritance", default="pipeline/carrier/data/gene_inheritance.tsv")
     ap.add_argument("--person-id", required=True)
     ap.add_argument("--sex", required=True, choices=["XX", "XY"])
-    ap.add_argument("--min-stars", type=int, default=2)
+    ap.add_argument("--min-stars", type=int, default=1)
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     calls = call_carriers(args.vcf, args.clinvar, args.inheritance, args.min_stars)

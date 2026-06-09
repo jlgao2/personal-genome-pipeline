@@ -228,7 +228,7 @@ function renderRiskRow(risk) {
 function renderSCH(h) {
   return `<div class="sch-row">
     <span class="sch-gene">${escHtml(h.gene)}</span>
-    <span class="badge ${badgeClass(h.tier === "tier1" ? "moderate" : "low")}">${escHtml(h.tier || "")}</span>
+    <span class="badge ${badgeClass(h.confidence === "high" ? "moderate" : "low")}">${escHtml(h.confidence === "high" ? "moderate" : "low")}</span>
     <div class="sch-meta">
       <span>${escHtml(h.condition)}</span>
       <span>${escHtml(h.inheritance)}</span>

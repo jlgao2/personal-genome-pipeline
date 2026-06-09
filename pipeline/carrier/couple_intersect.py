@@ -44,7 +44,8 @@ def intersect(calls_a, sex_a, calls_b, sex_b, severe_by_gene, caveats=None):
             notes="Both partners carriers -> 25% of pregnancies affected."))
 
     # X-linked recessive: risk driven by the FEMALE partner's carrier status.
-    if (sex_a == "XX") ^ (sex_b == "XX"):  # exactly one female partner (expected case)
+    # exactly one female partner (the in-scope case). XX+XX couples' XL risk is out of Phase 1 scope.
+    if (sex_a == "XX") ^ (sex_b == "XX"):
         fcalls = calls_a if sex_a == "XX" else calls_b
         for gene, cs in _by_gene(fcalls).items():
             if "XL" not in cs[0].inheritance:
