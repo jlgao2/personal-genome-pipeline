@@ -6,6 +6,9 @@
 
 # ── Personal genome data (NEVER commit) ──
 data/
+# …but the carrier tool's small, non-personal reference data IS committed:
+!pipeline/carrier/data/
+!pipeline/carrier/data/**
 genome_*.zip
 genome_*.txt
 *.23andme.txt
