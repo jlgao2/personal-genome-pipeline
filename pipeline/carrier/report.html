@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carrier Screening Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    background: #f5f6f8;
+    color: #1a1a1a;
+  }
+
+  /* ── Disclaimer ── */
+  .disclaimer {
+    background: #fff3cd;
+    border-left: 5px solid #e6a817;
+    padding: 14px 20px;
+    font-size: 13.5px;
+    color: #5a4000;
+  }
+  .disclaimer strong { display: block; margin-bottom: 4px; font-size: 14px; }
+
+  /* ── Page chrome ── */
+  .page-header {
+    background: #1d2a3a;
+    color: #e8edf2;
+    padding: 20px 28px;
+  }
+  .page-header h1 { font-size: 20px; font-weight: 600; }
+  .page-header .meta { font-size: 12.5px; color: #9aa8b8; margin-top: 6px; }
+
+  main { max-width: 860px; margin: 28px auto; padding: 0 16px 60px; }
+
+  /* ── Cards / sections ── */
+  .card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 14px 20px;
+    background: #f0f2f5;
+    border-bottom: 1px solid #e3e6ea;
+    color: #3a3f4a;
+  }
+  .card-body { padding: 0; }
+
+  /* ── Risk rows ── */
+  .risk-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 16px 20px;
+  }
+  .risk-row:last-child { border-bottom: none; }
+  .risk-main { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+  .risk-main .gene { font-weight: 700; font-size: 16px; min-width: 80px; }
+  .risk-main .condition { color: #3a3f4a; font-size: 14px; flex: 1; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+  .badge-serious  { background: #fde8e8; color: #b71c1c; }
+  .badge-moderate { background: #fff3e0; color: #bf6e00; }
+  .badge-low      { background: #eeeeee; color: #555; }
+
+  .risk-meta { font-size: 13px; color: #555; grid-column: 1 / -1; display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 6px; }
+  .risk-meta span { display: flex; gap: 4px; }
+  .risk-meta .label { color: #888; }
+
+  .risk-notes { grid-column: 1 / -1; font-size: 13px; color: #2a5f2a; background: #f0f9f0; border-radius: 5px; padding: 8px 12px; margin-top: 4px; }
+
+  .variants { grid-column: 1 / -1; margin-top: 10px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .variant-box { background: #f7f8fb; border: 1px solid #e0e3ea; border-radius: 6px; padding: 8px 14px; font-size: 12.5px; flex: 1; min-width: 200px; }
+  .variant-box .vlabel { font-weight: 600; font-size: 11px; text-transform: uppercase; color: #888; margin-bottom: 3px; }
+  .variant-box .vval { font-family: "SFMono-Regular", Consolas, monospace; word-break: break-all; color: #1a1a1a; }
+
+  /* ── details/summary collapsibles ── */
+  details > summary {
+    cursor: pointer;
+    padding: 14px 20px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #3a5a9a;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid #e8eaee;
+  }
+  details > summary::before {
+    content: "▶";
+    font-size: 10px;
+    transition: transform .15s;
+  }
+  details[open] > summary::before { transform: rotate(90deg); }
+  details > summary::-webkit-details-marker { display: none; }
+
+  /* ── Single-carrier highlights ── */
+  .sch-row {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 14px 20px;
+    font-size: 13.5px;
+  }
+  .sch-row:last-child { border-bottom: none; }
+  .sch-gene { font-weight: 700; font-size: 15px; display: inline-block; min-width: 80px; }
+  .sch-meta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; font-size: 12.5px; color: #555; }
+  .sch-variant { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; color: #555; margin-top: 4px; word-break: break-all; }
+
+  /* ── Caveats ── */
+  .caveat-list { padding: 12px 20px; }
+  .caveat-list li { margin-left: 18px; font-size: 13.5px; color: #555; margin-bottom: 4px; }
+
+  /* ── Empty states ── */
+  .empty { padding: 28px 20px; color: #888; font-size: 14px; text-align: center; }
+
+  /* ── Error banner ── */
+  .error-banner {
+    background: #fce4e4;
+    border-left: 5px solid #c62828;
+    padding: 16px 22px;
+    margin: 24px auto;
+    max-width: 860px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #5a0000;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 540px) {
+    .risk-meta { flex-direction: column; gap: 4px; }
+    .variants { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="disclaimer">
+  <strong>Important Notice</strong>
+  Research-grade, not a clinical carrier screen. Confirm any finding with a clinical laboratory and a genetic counselor before making reproductive decisions. Your partner has consented to this analysis.
+</div>
+
+<div class="page-header">
+  <h1>Couple Carrier Screening Report</h1>
+  <div class="meta" id="report-meta">Loading&hellip;</div>
+</div>
+
+<main id="main-content">
+  <div class="empty" id="loading-msg">Loading report&hellip;</div>
+</main>
+
+<script>
+"use strict";
+
+function badgeClass(sig) {
+  if (!sig) return "badge-low";
+  const s = sig.toLowerCase();
+  if (s === "serious")  return "badge-serious";
+  if (s === "moderate") return "badge-moderate";
+  return "badge-low";
+}
+
+function escHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderVariantBox(label, variant) {
+  const val = variant && variant.trim() ? escHtml(variant) : "<em>not detected / not tested</em>";
+  return `<div class="variant-box">
+    <div class="vlabel">${escHtml(label)}</div>
+    <div class="vval">${val}</div>
+  </div>`;
+}
+
+function renderRiskRow(risk) {
+  const sig = risk.significance || "low";
+  const inh = risk.inheritance || "";
+  const riskPct = risk.risk_pct != null
+    ? `${risk.risk_pct}% of pregnancies affected (${inh})`
+    : (risk.notes || "");
+
+  const partnerA = risk.partner_A_variant || "";
+  const partnerB = risk.partner_B_variant || "";
+
+  return `<div class="risk-row">
+    <div class="risk-main">
+      <span class="gene">${escHtml(risk.gene)}</span>
+      <span class="condition">${escHtml(risk.condition)}</span>
+      <span class="badge ${badgeClass(sig)}">${escHtml(sig)}</span>
+    </div>
+    <div class="risk-meta">
+      <span><span class="label">Inheritance:</span> ${escHtml(inh) || "–"}</span>
+      <span><span class="label">Risk:</span> ${escHtml(riskPct) || "–"}</span>
+    </div>
+    ${risk.notes ? `<div class="risk-notes">${escHtml(risk.notes)}</div>` : ""}
+    <div class="variants">
+      ${renderVariantBox("Partner A variant", partnerA)}
+      ${renderVariantBox("Partner B variant", partnerB)}
+    </div>
+  </div>`;
+}
+
+function renderSCH(h) {
+  return `<div class="sch-row">
+    <span class="sch-gene">${escHtml(h.gene)}</span>
+    <span class="badge ${badgeClass(h.tier === "tier1" ? "moderate" : "low")}">${escHtml(h.tier || "")}</span>
+    <div class="sch-meta">
+      <span>${escHtml(h.condition)}</span>
+      <span>${escHtml(h.inheritance)}</span>
+      ${h.clnsig ? `<span>${escHtml(h.clnsig)}</span>` : ""}
+      ${h.stars != null ? `<span>${"★".repeat(Math.min(4, h.stars))}${"☆".repeat(Math.max(0, 4 - h.stars))}</span>` : ""}
+    </div>
+    ${h.variant ? `<div class="sch-variant">${escHtml(h.variant)}</div>` : ""}
+  </div>`;
+}
+
+function render(data) {
+  const meta = document.getElementById("report-meta");
+  const main = document.getElementById("main-content");
+
+  // Header meta
+  const partners = (data.partners || []).map(p => `${p.id} (${p.sex})`).join(" · ");
+  const genAt = data.generated_at
+    ? new Date(data.generated_at).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" })
+    : "unknown";
+  meta.textContent = `Generated: ${genAt}  ·  Partners: ${partners || "—"}`;
+
+  const risks = data.couple_risks || [];
+  const highlights = data.single_carrier_highlights || [];
+  const caveats = data.coverage_caveats || [];
+
+  let html = "";
+
+  // ── Couple risks ──────────────────────────────────────────────────────────
+  html += `<div class="card">
+    <div class="card-title">Shared Carrier Risks</div>
+    <div class="card-body">`;
+
+  const serious  = risks.filter(r => (r.significance || "").toLowerCase() === "serious");
+  const moderate = risks.filter(r => (r.significance || "").toLowerCase() === "moderate");
+  const low      = risks.filter(r => !["serious","moderate"].includes((r.significance || "").toLowerCase()));
+
+  if (risks.length === 0) {
+    html += `<div class="empty">No shared-gene carrier risks found in this analysis.</div>`;
+  } else {
+    // Serious always visible
+    serious.forEach(r => { html += renderRiskRow(r); });
+
+    // Moderate + low inside collapsible (unless there are no serious ones — show all)
+    const collapsible = [...moderate, ...low];
+    if (collapsible.length > 0) {
+      if (serious.length > 0) {
+        html += `<details><summary>Show lower-significance findings (${collapsible.length})</summary>`;
+        collapsible.forEach(r => { html += renderRiskRow(r); });
+        html += `</details>`;
+      } else {
+        // No serious: show everything directly
+        collapsible.forEach(r => { html += renderRiskRow(r); });
+      }
+    }
+  }
+
+  html += `</div></div>`;
+
+  // ── Single-carrier highlights ─────────────────────────────────────────────
+  html += `<div class="card">`;
+  if (highlights.length === 0) {
+    html += `<details>
+      <summary>Single-Carrier Highlights (0)</summary>
+      <div class="empty">No single-carrier highlights recorded.</div>
+    </details>`;
+  } else {
+    html += `<details>
+      <summary>Single-Carrier Highlights (${highlights.length})</summary>
+      <div class="card-body">`;
+    highlights.forEach(h => { html += renderSCH(h); });
+    html += `</div></details>`;
+  }
+  html += `</div>`;
+
+  // ── Coverage caveats ──────────────────────────────────────────────────────
+  html += `<div class="card">
+    <div class="card-title">Coverage Caveats</div>
+    <div class="card-body">`;
+  if (caveats.length === 0) {
+    html += `<div class="empty">No coverage caveats recorded.</div>`;
+  } else {
+    html += `<ul class="caveat-list">`;
+    caveats.forEach(c => { html += `<li>${escHtml(c)}</li>`; });
+    html += `</ul>`;
+  }
+  html += `</div></div>`;
+
+  main.innerHTML = html;
+}
+
+function showError(msg) {
+  const main = document.getElementById("main-content");
+  main.innerHTML = `<div class="error-banner">${escHtml(msg)}</div>`;
+  document.getElementById("report-meta").textContent = "";
+}
+
+fetch("./couple_report.json")
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status} fetching couple_report.json`);
+    return res.json();
+  })
+  .then(data => {
+    if (!data || typeof data !== "object") {
+      showError("couple_report.json is present but could not be parsed.");
+      return;
+    }
+    render(data);
+  })
+  .catch(err => {
+    // Distinguish "file not found" from other errors
+    if (err.message && err.message.includes("HTTP 404")) {
+      showError("Report not generated yet — couple_report.json not found. Run the carrier screening pipeline first.");
+    } else if (err instanceof TypeError) {
+      // fetch() itself threw (e.g. network error / CORS / file:// protocol)
+      showError("Could not load couple_report.json. If opening report.html directly from disk (file://), serve it via a local HTTP server instead: cd output/carrier && python3 -m http.server 8899");
+    } else {
+      showError("Error loading report: " + err.message);
+    }
+  });
+</script>
+</body>
+</html>
