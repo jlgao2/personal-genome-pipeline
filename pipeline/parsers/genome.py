@@ -176,6 +176,40 @@ def parse_prs_scores_tsv(tsv_path: Path) -> Iterator[dict]:
             yield base
 
 
+def parse_prs_ancestry_tsv(tsv_path: Path) -> Iterator[dict]:
+    """Yield canonical rows from prs_ancestry.tsv (ancestry-calibrated pgsc_calc PRS).
+
+    One row per scored PGS, carrying the EAS-calibrated percentile/Z and a
+    reliability flag (calibrated / inflated / sparse). Calibrated scores are
+    tier B; inflated genome-wide and sparse low-variant scores are tier C so
+    consumers can de-emphasise them."""
+    with tsv_path.open() as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            pgs_id = row.get("pgs_id")
+            reliability = row.get("reliability")
+            tier = "B" if reliability == "calibrated" else "C"
+            base = _row(
+                source_tsv="prs_ancestry",
+                scan_tier="exploratory",
+                gene=None,
+                rsid=None,
+                tier=tier,
+                summary=row.get("summary"),
+                meta={
+                    "pgs_id":         pgs_id,
+                    "trait":          row.get("trait"),
+                    "gwas_ancestry":  row.get("gwas_ancestry"),
+                    "eas_percentile": float(row["eas_percentile"]) if row.get("eas_percentile") else None,
+                    "z_eas":          float(row["z_eas"]) if row.get("z_eas") else None,
+                    "n_variants":     int(row["n_variants"]) if row.get("n_variants") else None,
+                    "reliability":    reliability,
+                },
+            )
+            base["id"] = f"prs_ancestry:{pgs_id}"
+            yield base
+
+
 def parse_sv_cnv_tsv(tsv_path: Path) -> Iterator[dict]:
     """Yield canonical rows from sv_cnv_findings.tsv (AnnotSV-derived)."""
     with tsv_path.open() as f:
@@ -211,6 +245,7 @@ TSV_PARSERS = [
     ("extra_traits.tsv",     lambda p: parse_curated_traits_tsv(p, "extra_traits")),
     ("imputed_panels.tsv",   lambda p: parse_curated_traits_tsv(p, "imputed_panels")),
     ("prs_scores.tsv",       lambda p: parse_prs_scores_tsv(p)),
+    ("prs_ancestry.tsv",     lambda p: parse_prs_ancestry_tsv(p)),
     ("sv_cnv_findings.tsv",  lambda p: parse_sv_cnv_tsv(p)),
 ]
 
