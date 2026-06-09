@@ -1,0 +1,5 @@
+##fileformat=VCFv4.1
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+7	100	rs1	G	A	.	.	CLNSIG=Pathogenic;CLNDN=Cystic_fibrosis;CLNREVSTAT=reviewed_by_expert_panel;GENEINFO=CFTR:1080
+7	200	rs2	C	T	.	.	CLNSIG=Pathogenic;CLNDN=Cystic_fibrosis;CLNREVSTAT=reviewed_by_expert_panel;GENEINFO=CFTR:1080
+17	300	rs3	A	G	.	.	CLNSIG=Pathogenic;CLNDN=Breast_cancer;CLNREVSTAT=reviewed_by_expert_panel;GENEINFO=BRCA1:672
