@@ -19,6 +19,14 @@ import sys
 import os
 from collections import defaultdict
 
+# Ensure repo root is on sys.path so `pipeline.clinvar_lib` is importable
+# when this script is run directly (python3 pipeline/06_clinvar_acmg.py).
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from pipeline.clinvar_lib import (
+    parse_vcf_positions, parse_clinvar_info, review_status_stars, is_pathogenic,
+)
+
 # ACMG Secondary Findings list v3.2 (March 2023). 81 genes.
 # Source: ACMG SF v3.2 (Miller et al. Genet Med 2023).
 ACMG_SF_V32 = {
@@ -50,85 +58,6 @@ ACMG_CARRIER_PANEL = {
     "SLC26A4", "USH2A", "CYBB", "OTC", "G6PD", "F8", "F9", "MEFV",
     "PAH", "GALT", "PCDH15",
 }
-
-
-def parse_vcf_positions(path):
-    """Return dict (chrom, pos) -> list of (ref, alt, gt) for each variant."""
-    open_fn = gzip.open if path.endswith(".gz") else open
-    out = defaultdict(list)
-    with open_fn(path, "rt") as f:
-        sample_idx = None
-        for line in f:
-            if line.startswith("##"):
-                continue
-            if line.startswith("#CHROM"):
-                # last column is sample
-                cols = line.rstrip().split("\t")
-                if len(cols) > 9:
-                    sample_idx = 9
-                continue
-            cols = line.rstrip().split("\t")
-            if len(cols) < 8:
-                continue
-            chrom, pos, _, ref, alt = cols[0], cols[1], cols[2], cols[3], cols[4]
-            chrom = chrom.replace("chr", "")
-            gt = ""
-            if sample_idx and len(cols) > sample_idx:
-                fmt = cols[8].split(":")
-                vals = cols[sample_idx].split(":")
-                if "GT" in fmt:
-                    gt = vals[fmt.index("GT")]
-            for a in alt.split(","):
-                out[(chrom, int(pos))].append((ref, a, gt))
-    return out
-
-
-def parse_clinvar_info(info_str):
-    """Pull CLNSIG, CLNDN, CLNREVSTAT, GENEINFO from a ClinVar INFO field."""
-    fields = {}
-    for kv in info_str.split(";"):
-        if "=" in kv:
-            k, v = kv.split("=", 1)
-            fields[k] = v
-    return {
-        "CLNSIG": fields.get("CLNSIG", ""),
-        "CLNDN": fields.get("CLNDN", "").replace("|", "; ").replace("_", " "),
-        "CLNREVSTAT": fields.get("CLNREVSTAT", ""),
-        "GENEINFO": fields.get("GENEINFO", "").split("|")[0].split(":")[0],
-        "MC": fields.get("MC", ""),
-        "ALLELEID": fields.get("ALLELEID", ""),
-    }
-
-
-def review_status_stars(rev):
-    """Map ClinVar review status to star count."""
-    rev = rev.lower()
-    if "practice_guideline" in rev:
-        return 4
-    if "reviewed_by_expert_panel" in rev:
-        return 3
-    if "criteria_provided,_multiple_submitters,_no_conflicts" in rev:
-        return 2
-    if "criteria_provided,_conflicting_classifications" in rev:
-        return 1
-    if "criteria_provided,_single_submitter" in rev:
-        return 1
-    if "no_assertion_criteria_provided" in rev:
-        return 0
-    if "no_classification_for_the_individual_variant" in rev:
-        return 0
-    return 0
-
-
-def is_pathogenic(clnsig: str) -> str:
-    s = clnsig.lower()
-    if "pathogenic/likely_pathogenic" in s or "pathogenic|likely_pathogenic" in s:
-        return "Pathogenic/Likely_pathogenic"
-    if "pathogenic" in s and "likely_pathogenic" not in s and "non-pathogenic" not in s:
-        return "Pathogenic"
-    if "likely_pathogenic" in s:
-        return "Likely_pathogenic"
-    return ""
 
 
 def main():
