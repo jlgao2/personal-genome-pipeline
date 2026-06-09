@@ -41,6 +41,9 @@ output/findings/
 output/annotsv/
 # personal PRS percentiles, scores, samplesheet (general docs live in docs/prs/)
 output/pgsc_calc/
+# ── Couple carrier-screening (personal + partner data) ──
+data/partner/
+output/carrier/
 
 # ── Dashboard data (contains personal findings — use data.example.js) ──
 output/web/js/data.js
