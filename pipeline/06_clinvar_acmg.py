@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pipeline.clinvar_lib import (
     parse_vcf_positions, parse_clinvar_info, review_status_stars, is_pathogenic,
+    zygosity_of,
 )
 
 # ACMG Secondary Findings list v3.2 (March 2023). 81 genes.
@@ -123,13 +124,7 @@ def main():
                     stars = review_status_stars(info["CLNREVSTAT"])
                     if stars < args.min_stars:
                         continue
-                    zyg = "unknown"
-                    if u_gt:
-                        a = u_gt.replace("|", "/").split("/")
-                        if len(a) == 2:
-                            zyg = ("ref/ref" if a[0] == a[1] == "0"
-                                   else "homozygous_alt" if a[0] == a[1]
-                                   else "heterozygous")
+                    zyg = zygosity_of(u_gt)
                     if zyg == "ref/ref":
                         continue
                     row_str = (

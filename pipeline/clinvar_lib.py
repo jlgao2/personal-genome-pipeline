@@ -33,6 +33,7 @@ def parse_vcf_positions(path):
 
 
 def parse_clinvar_info(info_str):
+    """Pull CLNSIG, CLNDN, CLNREVSTAT, GENEINFO from a ClinVar INFO field."""
     fields = {}
     for kv in info_str.split(";"):
         if "=" in kv:
@@ -49,6 +50,7 @@ def parse_clinvar_info(info_str):
 
 
 def review_status_stars(rev):
+    """Map ClinVar review status to star count."""
     rev = rev.lower()
     if "practice_guideline" in rev:
         return 4
@@ -60,10 +62,14 @@ def review_status_stars(rev):
         return 1
     if "criteria_provided,_single_submitter" in rev:
         return 1
+    if "no_assertion_criteria_provided" in rev:
+        return 0
+    if "no_classification_for_the_individual_variant" in rev:
+        return 0
     return 0
 
 
-def is_pathogenic(clnsig):
+def is_pathogenic(clnsig: str) -> str:
     s = clnsig.lower()
     if "pathogenic/likely_pathogenic" in s or "pathogenic|likely_pathogenic" in s:
         return "Pathogenic/Likely_pathogenic"
