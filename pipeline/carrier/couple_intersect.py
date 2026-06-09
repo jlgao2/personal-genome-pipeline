@@ -1,11 +1,11 @@
 """Join two persons' carrier calls -> couple risk report."""
 import argparse
-import csv
 import datetime as _dt
 import json
 from pathlib import Path
 
 from pipeline.carrier.schema import CarrierCall, CoupleRisk, CoupleReport
+from pipeline.carrier.tier1_clinvar import load_inheritance
 
 
 def _tier(severe, stars_a, stars_b):
@@ -31,8 +31,10 @@ def intersect(calls_a, sex_a, calls_b, sex_b, severe_by_gene, caveats=None):
 
     # Autosomal recessive: risk only when BOTH partners carry the same gene.
     for gene in sorted(set(a_by) & set(b_by)):
-        if "XL" in (a_by[gene][0].inheritance + b_by[gene][0].inheritance):
-            continue  # handled below
+        # AR;XL dual-mode genes (e.g. SHOX) defer to the XL branch below; the AR 25%
+        # path is not emitted for them — a known Phase 1 simplification.
+        if "XL" in a_by[gene][0].inheritance or "XL" in b_by[gene][0].inheritance:
+            continue
         ca, cb = a_by[gene][0], b_by[gene][0]
         severe = severe_by_gene.get(gene, False)
         risks.append(CoupleRisk(
@@ -54,7 +56,7 @@ def intersect(calls_a, sex_a, calls_b, sex_b, severe_by_gene, caveats=None):
                 significance=_tier(severe, c.stars, c.stars),
                 partner_A_variant=(c.variant if sex_a == "XX" else ""),
                 partner_B_variant=(c.variant if sex_b == "XX" else ""),
-                notes="Female partner carries an X-linked recessive variant -> 50% of sons affected."))
+                notes="Female partner carries an X-linked recessive variant -> 50% of sons affected; 50% of daughters carriers."))
 
     # Single-carrier highlights: severe-gene carriers that are NOT a couple risk.
     risk_genes = {r.gene for r in risks}
@@ -83,10 +85,7 @@ def main():
     ap.add_argument("--inheritance", default="pipeline/carrier/data/gene_inheritance.tsv")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
-    severe = {}
-    with open(args.inheritance) as f:
-        for row in csv.DictReader(f, delimiter="\t"):
-            severe[row["gene"]] = row["severe"] == "yes"
+    severe = {g: v["severe"] for g, v in load_inheritance(args.inheritance).items()}
     calls_a, sex_a = _load(args.a)
     calls_b, sex_b = _load(args.b)
     rep = intersect(calls_a, sex_a, calls_b, sex_b, severe)

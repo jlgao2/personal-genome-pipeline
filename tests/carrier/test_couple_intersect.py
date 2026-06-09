@@ -33,6 +33,7 @@ def test_xlinked_female_carrier_is_50pct_regardless_of_male():
     assert len(rep.couple_risks) == 1
     r = rep.couple_risks[0]
     assert r.gene == "DMD" and r.risk_pct == 50 and "sons" in r.notes.lower()
+    assert r.significance == "serious"
 
 def test_low_tier_when_below_two_stars():
     a = [_call("CFTR", "AR", 1, "7:100:G:A:rs1")]
