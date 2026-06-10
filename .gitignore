@@ -92,3 +92,6 @@ Thumbs.db
 # ── Allow the marker files for empty dirs ──
 !data/.keep
 !refs/.keep
+
+# ── BAM-based specialist callers (mtDNA/HLA/CYP2D6/SMN1/Y — personal) ──
+output/specialist/
