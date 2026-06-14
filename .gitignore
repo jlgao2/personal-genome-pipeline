@@ -62,6 +62,11 @@ work/
 logs/
 *.log
 
+# ── Playwright screenshots (rendered personal report — NEVER commit) ──
+.playwright-mcp/
+/genome-*.png
+/genome-*.jpeg
+
 # ── Temp / build artefacts ──
 .junk_topmed_indexes/
 __pycache__/

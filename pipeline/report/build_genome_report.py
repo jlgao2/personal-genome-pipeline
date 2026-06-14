@@ -256,13 +256,18 @@ tr:last-child td{border-bottom:none}
 .toc a{color:var(--fg-dim);border:none}.toc a:hover{color:var(--accent)}
 
 .tldr ol{counter-reset:tl;list-style:none;margin:.6rem 0;padding:0}
-.tldr ol li{counter-increment:tl;display:flex;gap:.8rem;padding:.8rem 1rem;margin:.5rem 0;
+.tldr ol li{counter-increment:tl;position:relative;
+   padding:.85rem 1.1rem .85rem 3.1rem;margin:.6rem 0;
    background:var(--bg-card);border:1px solid var(--border);border-left:2px solid var(--accent);
-   border-radius:6px;align-items:flex-start}
-.tldr ol li::before{content:counter(tl);font-family:var(--font-mono);background:var(--accent-soft);
+   border-radius:6px}
+/* badge is absolutely positioned (out of flow) so the li's inline runs
+   (<strong>, text, …) stay as one flowing paragraph instead of becoming
+   sibling flex columns. */
+.tldr ol li::before{content:counter(tl);position:absolute;left:.85rem;top:.95rem;
+   font-family:var(--font-mono);background:var(--accent-soft);
    color:var(--accent);border:1px solid var(--border-accent);border-radius:50%;
-   min-width:1.6rem;height:1.6rem;display:flex;align-items:center;justify-content:center;
-   font-size:.74rem;font-weight:700;flex-shrink:0}
+   width:1.6rem;height:1.6rem;display:flex;align-items:center;justify-content:center;
+   font-size:.74rem;font-weight:700}
 
 .site-footer{margin-top:3rem;padding:1.4rem 1.5rem;border-top:1px solid var(--border);
    text-align:center;font-family:var(--font-mono);font-size:.71rem;color:var(--fg-mute)}
